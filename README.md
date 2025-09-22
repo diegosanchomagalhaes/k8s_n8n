@@ -472,8 +472,6 @@ uname -a
 
 ## 📁 Estrutura do Projeto
 
-## 📁 Estrutura do Projeto
-
 ```
 k3d-local-development/
 ├── 📖 README.md                    # Este arquivo (overview geral)
@@ -689,8 +687,6 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ## 📜 Scripts Disponíveis
 
-## 📜 Scripts Disponíveis
-
 ### **🚀 Script Principal (Uso Diário)**
 
 ```bash
@@ -709,8 +705,6 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 | **📱 Aplicações**     | `k8s/scripts/1.deploy-n8n.sh`      | Deploy do n8n                                        |
 
 > 📚 **Lista completa de scripts**: Consulte **[README-INFRA.md](README-INFRA.md)** para todos os scripts disponíveis e suas funções específicas.
-
-## 🔧 Solução de Problemas
 
 ## 🔧 Solução de Problemas
 
@@ -902,8 +896,6 @@ kubectl exec -i statefulset/postgres -- psql -U postgres n8n < backup.sql
 
 ## 🚀 Deploy para Produção
 
-## 🚀 Deploy para Produção
-
 ### **🎯 Filosofia: 100% Compatível**
 
 Este projeto é projetado para ser **100% compatível** com qualquer cluster Kubernetes de produção. Os mesmos manifests funcionam em:
@@ -953,8 +945,6 @@ Para deploy detalhado em produção, consulte:
 - [ ] **Domínios** configurados (DNS)
 - [ ] **Certificados** (Let's Encrypt ou Enterprise)
 - [ ] **Monitoring** configurado
-
-## 🤝 Contribuindo e Fork do Projeto
 
 ## 🤝 Contribuindo e Fork do Projeto
 
