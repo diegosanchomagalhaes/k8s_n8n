@@ -114,11 +114,11 @@ nano k8s/apps/n8n/n8n-secret-db.yaml
 Este projeto configura um ambiente de desenvolvimento local completo usando:
 
 - **k3d**: Cluster Kubernetes local leve
-- **PostgreSQL**: Banco de dados persistente (armazenado em SSD NVMe)
+- **PostgreSQL**: Banco de dados persistente
 - **n8n**: Plataforma de automação de workflows
 - **Traefik**: Ingress controller (padrão do k3d)
 - **cert-manager**: Gerenciamento de certificados TLS self-signed
-- **Storage persistente**: Dados salvos em `/mnt/e/postgresql`
+- **Storage persistente**: Dados salvos em Exemplo: `/mnt/e/postgresql`
 
 ## 🚀 Por que k3d? Pensando em Produção
 
