@@ -1,0 +1,172 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      initContainers:
+        - name: create-database
+          image: postgres:16
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_HOST
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_PORT
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL to be ready..."
+              until pg_isready -h $PGHOST -p $PGPORT -U $PGUSER; do
+                echo "Waiting for database connection..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready!"
+
+              echo "Creating database 'n8n' if it doesn't exist..."
+              psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'n8n'" | grep -q 1 || psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -c "CREATE DATABASE n8n"
+              echo "Database setup complete!"
+      containers:
+        - name: n8n
+          image: n8nio/n8n:1.111.1
+          ports:
+            - containerPort: 5678
+          env:
+            - name: DB_TYPE
+              value: postgresdb
+            - name: DB_POSTGRESDB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_HOST
+            - name: DB_POSTGRESDB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_PORT
+            - name: DB_POSTGRESDB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_DATABASE
+            - name: DB_POSTGRESDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_USER
+            - name: DB_POSTGRESDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: DB_POSTGRESDB_PASSWORD
+            - name: N8N_HOST
+              value: n8n.local.127.0.0.1.nip.io
+            - name: N8N_PORT
+              value: "5678"
+            - name: N8N_PROTOCOL
+              value: https
+            - name: WEBHOOK_URL
+              value: https://n8n.local.127.0.0.1.nip.io
+            # Proxy configuration for Traefik ingress
+            - name: N8N_PROXY_SET_HEADERS
+              value: "true"
+            # Disable rate limiting to avoid proxy issues
+            - name: N8N_RATE_LIMITING_DISABLED
+              value: "true"
+            # Trust proxy headers from Traefik
+            - name: N8N_TRUST_PROXY
+              value: "true"
+            # Additional Express configuration for proxy
+            - name: EXPRESS_TRUST_PROXY
+              value: "true"
+            # Secure cookie configuration for HTTPS
+            - name: N8N_SECURE_COOKIE
+              value: "true"
+            # Session configuration for HTTPS
+            - name: N8N_SESSION_COOKIE_SECURE
+              value: "true"
+            # Task runners configuration (remove deprecation warning)
+            - name: N8N_RUNNERS_ENABLED
+              value: "true"
+            # Environment access security (remove deprecation warning)
+            - name: N8N_BLOCK_ENV_ACCESS_IN_NODE
+              value: "false"
+            # Performance optimizations
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=1536 --max-http-header-size=16384"
+            - name: N8N_METRICS
+              value: "true"
+            # Cache configuration for faster loading
+            - name: N8N_CACHE_ENABLED
+              value: "true"
+            # Database connection pool for better performance
+            - name: DB_POSTGRESDB_POOL_SIZE
+              value: "10"
+            - name: DB_POSTGRESDB_CONNECTION_TIMEOUT
+              value: "30000"
+            # UI optimizations
+            - name: N8N_DISABLE_PRODUCTION_MAIN_PROCESS
+              value: "false"
+            # Worker process optimization
+            - name: N8N_WORKER_INSTANCE_COUNT
+              value: "2"
+            # Faster startup by reducing checks
+            - name: N8N_STARTUP_TIMEOUT
+              value: "300"
+            # Timezone optimization
+            - name: GENERIC_TIMEZONE
+              value: "America/Sao_Paulo"
+            # Disable telemetry for faster startup
+            - name: N8N_DISABLE_TELEMETRY
+              value: "true"
+            # Enable compression for better network performance
+            - name: N8N_COMPRESSION_ENABLED
+              value: "true"
+          resources:
+            requests:
+              cpu: "300m"
+              memory: "800Mi"
+            limits:
+              cpu: "1500m"
+              memory: "2048Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

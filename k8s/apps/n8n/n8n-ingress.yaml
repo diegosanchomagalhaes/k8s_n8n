@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - n8n.local.127.0.0.1.nip.io
+      secretName: n8n-tls
+  rules:
+    - host: n8n.local.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: n8n
+                port:
+                  number: 5678

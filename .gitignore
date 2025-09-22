@@ -1,0 +1,351 @@
+# ==================================================================
+# BrioIT Local - .gitignore
+# ==================================================================
+
+# Arquivos temporários e de sistema
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+*.bak
+
+# Diretórios temporários
+tmp/
+temp/
+.tmp/
+
+# ==================================================================
+# Kubernetes e Secrets
+# ==================================================================
+
+# Arquivos de secrets com dados sensíveis
+**/secrets/**
+**/*secret*.yaml
+**/*secret*.yml
+**/secret-*.yaml
+**/secret-*.yml
+
+# Excluir secrets mas manter templates/exemplos
+!**/secrets/template/
+!**/secrets/example/
+!**/*secret*-template.yaml
+!**/*secret*-example.yaml
+!**/*.template
+!**/*.example
+
+# Certificados e chaves privadas
+*.key
+*.crt
+*.pem
+*.p12
+*.pfx
+**/*.key
+**/*.crt
+**/*.pem
+
+# Excluir certificados mas manter auto-assinados de desenvolvimento
+!**/certs/dev/
+!**/certs/local/
+!**/certs/self-signed/
+
+# Configurações de kubectl
+kubeconfig*
+.kubeconfig
+.kube/config
+**/.kube/config
+
+# ==================================================================
+# Scripts e Logs
+# ==================================================================
+
+# Logs de scripts
+*.log
+logs/
+script-logs/
+execution.log
+deploy.log
+install.log
+
+# Output de comandos kubectl/k3d
+kubectl-output.txt
+k3d-output.txt
+cluster-status.txt
+
+# Arquivos temporários de terminal
+nohup.out
+terminal-output.txt
+
+# Arquivos de estado de scripts
+.script-state
+.deployment-state
+.last-run
+script.state
+
+# Backups gerados por scripts
+backup-*.sql
+backup-*.tar.gz
+backup-*.zip
+db-backup-*
+postgres-backup-*
+
+# ==================================================================
+# k3d e Docker
+# ==================================================================
+
+# Configurações locais do k3d
+.k3d/
+k3d-registries.yaml
+
+# Docker compose overrides
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# ==================================================================
+# Terraform (se usado futuramente)
+# ==================================================================
+
+# Arquivos de estado do Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+terraform.tfvars
+terraform.tfvars.json
+
+# Arquivos de plano do Terraform
+*.tfplan
+.terraform/
+.terraform.lock.hcl
+
+# Configurações sensíveis do Terraform
+secrets.tfvars
+local.tfvars
+
+# ==================================================================
+# Específico do Projeto BrioIT Local
+# ==================================================================
+
+# Estados temporários dos scripts de inicialização
+.cluster-state
+.last-deployment
+script-execution.log
+
+# Outputs de debug dos pods
+pod-logs/
+debug-output.txt
+troubleshoot.log
+
+# Certificados TLS temporários/renovados
+*.crt.new
+*.key.new
+tls-renewal/
+
+# Configurações geradas automaticamente
+auto-generated-*.yaml
+runtime-*.yml
+
+# ==================================================================
+# Dados e Volumes
+# ==================================================================
+
+# Dados persistentes locais
+data/
+volumes/
+postgres-data/
+n8n-data/
+app-data/
+
+# Dados específicos do ambiente atual
+/mnt/e/postgresql/
+/mnt/*/postgresql/
+
+# Port-forwards ativos (se salvos em arquivo)
+port-forwards.txt
+active-ports.txt
+
+# Arquivos de banco de dados
+*.db
+*.sqlite
+*.sqlite3
+
+# ==================================================================
+# Configurações de IDE/Editor
+# ==================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Vim
+.vim/
+.vimrc.local
+
+# Emacs
+.emacs.d/
+*~
+
+# ==================================================================
+# Configurações Específicas de Ambiente
+# ==================================================================
+
+# Arquivos de configuração local
+.env
+.env.local
+.env.development
+.env.production
+local.conf
+local.config
+
+# Configurações específicas de usuário
+user-config.yaml
+user-config.yml
+personal-settings.yaml
+
+# Configurações temporárias geradas pelos scripts
+.script-config
+temp-config.yaml
+runtime-config.yaml
+
+# Arquivos de PID de processos
+*.pid
+process.pid
+kubectl-port-forward.pid
+
+# ==================================================================
+# Arquivos de Cache
+# ==================================================================
+
+# Cache de kubectl
+.kubectl_cache/
+
+# Cache de helm (se usado)
+.helm/
+
+# Cache de aplicações
+.cache/
+cache/
+
+# ==================================================================
+# Backup e Recovery
+# ==================================================================
+
+# Arquivos de backup automático
+*-backup
+*.backup
+backup/
+backups/
+
+# Snapshots
+snapshots/
+*.snapshot
+
+# ==================================================================
+# Monitoramento e Métricas
+# ==================================================================
+
+# Logs de monitoramento
+monitoring-logs/
+metrics/
+prometheus-data/
+grafana-data/
+
+# ==================================================================
+# Testes
+# ==================================================================
+
+# Resultados de testes
+test-results/
+coverage/
+*.test
+test.log
+
+# Configurações de teste
+test-config.yaml
+test-secrets.yaml
+
+# ==================================================================
+# Documentação Gerada
+# ==================================================================
+
+# Documentação auto-gerada
+generated-docs/
+api-docs/
+helm-docs/
+
+# ==================================================================
+# Arquivos de Sistema Operacional
+# ==================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Linux
+*~
+.nfs*
+
+# ==================================================================
+# Exceções Importantes (arquivos que DEVEM ser versionados)
+# ==================================================================
+
+# Manter templates e exemplos
+!examples/
+!templates/
+!samples/
+
+# Manter documentação
+!docs/
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# Manter scripts de automação
+!scripts/
+!*.sh
+!infra/scripts/*.sh
+!k8s/scripts/*.sh
+
+# Manter o script de inicialização específico
+!infra/scripts/9.start-n8n.sh
+
+# Manter manifests do Kubernetes (exceto secrets)
+!k8s/
+!infra/
+!*.yaml
+!*.yml
+
+# ==================================================================
+# Notas para Desenvolvimento
+# ==================================================================
+# 
+# Este .gitignore foi criado para um projeto de ambiente local k3d
+# com PostgreSQL, n8n e cert-manager.
+# 
+# IMPORTANTE: 
+# - Nunca commitar secrets reais ou chaves privadas
+# - Usar templates/exemplos para configurações sensíveis
+# - Revisar periodicamente este arquivo conforme o projeto evolui
+# - Arquivos de dados persistentes devem ficar em /mnt/e/postgresql
+#   (que está fora do repositório)
+#
+# ==================================================================
