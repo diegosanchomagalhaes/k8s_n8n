@@ -1,5 +1,5 @@
 # ==================================================================
-# BrioIT Local - .gitignore
+# Local - .gitignore
 # ==================================================================
 
 # Arquivos temporários e de sistema
@@ -136,7 +136,7 @@ secrets.tfvars
 local.tfvars
 
 # ==================================================================
-# Específico do Projeto BrioIT Local
+# Específico do Projeto Local
 # ==================================================================
 
 # Estados temporários dos scripts de inicialização
