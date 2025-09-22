@@ -34,6 +34,12 @@ temp/
 **/secret-*.yaml
 **/secret-*.yml
 
+# Secrets específicos do projeto
+postgres-secret-admin.yaml
+n8n-secret-db.yaml
+infra/postgres/postgres-secret-admin.yaml
+k8s/apps/n8n/n8n-secret-db.yaml
+
 # Excluir secrets mas manter templates/exemplos
 !**/secrets/template/
 !**/secrets/example/
@@ -349,3 +355,5 @@ Icon?
 #   (que está fora do repositório)
 #
 # ==================================================================
+infra/postgres/postgres-secret-admin.yaml
+k8s/apps/n8n/n8n-secret-db.yaml
