@@ -11,9 +11,6 @@ ports:
   - port: 8443:443
     nodeFilters:
       - loadbalancer
-  - port: 30432:30432
-    nodeFilters:
-      - loadbalancer
 volumes:
   - volume: /mnt/e/postgresql:/mnt/host-k8s
     nodeFilters:
