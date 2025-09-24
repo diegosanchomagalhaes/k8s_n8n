@@ -24,6 +24,9 @@ kubectl delete -f ./k8s/apps/n8n/n8n-deployment.yaml --ignore-not-found
 echo "======== Removendo Secret ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-secret-db.yaml --ignore-not-found
 
+echo "======== Removendo PVC ========"
+kubectl delete -f ./k8s/apps/n8n/n8n-pvc.yaml --ignore-not-found
+
 echo "======== Removendo Namespace ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-namespace.yaml --ignore-not-found
 

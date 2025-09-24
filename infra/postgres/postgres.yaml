@@ -13,6 +13,20 @@ spec:
       labels:
         app: postgres
     spec:
+      initContainers:
+        - name: create-directories
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "Creating database directories structure..."
+              mkdir -p /var/lib/postgresql/data/n8n
+              mkdir -p /var/lib/postgresql/data/backup
+              echo "Directory structure created successfully!"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
       containers:
         - name: postgres
           image: postgres:16

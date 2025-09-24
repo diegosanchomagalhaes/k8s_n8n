@@ -169,7 +169,11 @@ postgres-data/
 n8n-data/
 app-data/
 
-# Dados específicos do ambiente atual
+# Nova estrutura organizada de dados
+/mnt/e/cluster/
+/mnt/*/cluster/
+
+# Dados específicos do ambiente atual (legado)
 /mnt/e/postgresql/
 /mnt/*/postgresql/
 
@@ -247,15 +251,23 @@ cache/
 # Backup e Recovery
 # ==================================================================
 
+# Diretórios de backup gerados
+backup/backups/
+*/backup/backups/
+
 # Arquivos de backup automático
 *-backup
 *.backup
-backup/
-backups/
+*.sql.gz
+*.tar.gz
 
 # Snapshots
 snapshots/
 *.snapshot
+
+# Metadados de backup
+backup_info.json
+**/backup_info.json
 
 # ==================================================================
 # Monitoramento e Métricas

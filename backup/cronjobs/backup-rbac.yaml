@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-service-account
+  namespace: n8n
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: n8n
+  name: backup-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-rolebinding
+  namespace: n8n
+subjects:
+  - kind: ServiceAccount
+    name: backup-service-account
+    namespace: n8n
+roleRef:
+  kind: Role
+  name: backup-role
+  apiGroup: rbac.authorization.k8s.io

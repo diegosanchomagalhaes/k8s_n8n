@@ -1,52 +1,48 @@
-# K3D Local - Ambiente de Desenvolvimento Kubernetes
+# 🏗️ K8s n8n - Ambiente Kubernetes Completo
 
-> 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento local completo usando k3d, PostgreSQL persistente e aplicações automáticas. **100% compatível com qualquer cluster Kubernetes de produção** - AKS, EKS, GKE ou self-managed!
+> 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento Kubernetes completo com k3d, PostgreSQL persistente, n8n automação e sistema de backup profissional. **100% compatível com qualquer cluster Kubernetes de produção**!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.6.0-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.111.1-orange)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.112.4-orange)](https://n8n.io/)
+[![Backup System](https://img.shields.io/badge/Backup-Automated-green)](./backup/README.md)
 
 ## 📋 Sumário
 
-- [Instalação](#-instalação)
-- [Visão Geral](#-visão-geral)
-- [Por que k3d?](#-por-que-k3d-pensando-em-produção)
-- [Configuração SSH](#-configuração-ssh-para-github-opcional)
-- [Início Rápido](#-início-rápido---uso-diário)
-- [Documentação Modular](#-documentação-modular)
-- [Aplicações Disponíveis](#-aplicações-disponíveis)
-- [Scripts Disponíveis](#-scripts-disponíveis)
-- [Solução de Problemas](#-solução-de-problemas)
-- [Deploy para Produção](#-deploy-para-produção)
-- [Contribuindo](#-contribuindo-e-fork-do-projeto)
+- [🎯 Início Rápido](#-início-rápido)
+- [📂 Estrutura do Projeto](#-estrutura-do-projeto)
+- [🏗️ Arquitetura](#️-arquitetura)
+- [🗄️ Sistema de Backup](#️-sistema-de-backup)
+- [📚 Documentação](#-documentação)
+- [🛠️ Scripts Disponíveis](#️-scripts-disponíveis)
+- [🔧 Configuração](#-configuração)
+- [🚨 Troubleshooting](#-troubleshooting)
+- [🎯 Produção](#-deploy-para-produção)
 
-## 🚀 Instalação
+## 🎯 Início Rápido
 
-### **📥 Opção 1: Clone via HTTPS (Simples)**
+### **⚡ Setup Completo em 3 Comandos**
 
 ```bash
-# Clone o repositório via HTTPS
-git clone https://github.com/SEU_USUARIO/k3d-local-development.git
-cd k3d-local-development
+# 1. Configurar credenciais
+cp infra/postgres/postgres-secret-admin.yaml.template \
+   infra/postgres/postgres-secret-admin.yaml
+# Edite e defina sua senha PostgreSQL
+
+# 2. Subir infraestrutura completa
+./infra/scripts/10.start-infra.sh
+
+# 3. Deploy n8n
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh
 ```
 
-### **📥 Opção 2: Clone via SSH (Recomendado)**
+### **🌐 Acesso Rápido**
 
-````bash
-```bash
-# Clone o repositório via SSH (requer configuração SSH)
-git clone git@github.com:SEU_USUARIO/k3d-local-development.git
-cd k3d-local-development
+- **n8n**: https://n8n.local.127.0.0.1.nip.io
+- **PostgreSQL**: localhost:30432
 
-# OU Clone via HTTPS (pede senha/token)
-git clone https://github.com/SEU_USUARIO/k3d-local-development.git
-cd k3d-local-development
-````
-
-> 💡 **SSH é melhor para desenvolvimento**: Não pede senha, mais seguro. Veja [seção SSH](#-configuração-ssh-para-github-opcional) abaixo.
->
-> ⚠️ **IMPORTANTE**: Substitua `SEU_USUARIO` pelo seu usuário real do GitHub!
+---
 
 ### **⚙️ Configuração Inicial:**
 

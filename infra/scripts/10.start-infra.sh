@@ -48,6 +48,16 @@ fi
 echo "✅ Credenciais configuradas corretamente!"
 
 # =================================================================
+# 1.5. PREPARAR ESTRUTURA DE DIRETÓRIOS
+# =================================================================
+echo "📂 Preparando estrutura de diretórios..."
+if [ -f "$PROJECT_ROOT/infra/scripts/9.setup-directories.sh" ]; then
+    "$PROJECT_ROOT/infra/scripts/9.setup-directories.sh"
+else
+    echo "⚠️ Script de setup de diretórios não encontrado, continuando..."
+fi
+
+# =================================================================
 # 2. DEPLOY DA INFRAESTRUTURA
 # =================================================================
 

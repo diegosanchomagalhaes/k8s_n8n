@@ -6,25 +6,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "======== [1/7] Criando namespace do n8n ========"
+echo "======== [1/8] Criando namespace do n8n ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-namespace.yaml
 
-echo "======== [2/7] Criando Secret de conexão com o banco ========"
+echo "======== [2/8] Criando PVC para persistência ========"
+kubectl apply -f ./k8s/apps/n8n/n8n-pvc.yaml
+
+echo "======== [3/8] Criando Secret de conexão com o banco ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-secret-db.yaml
 
-echo "======== [3/7] Criando Deployment ========"
+echo "======== [4/8] Criando Deployment ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-deployment.yaml
 
-echo "======== [4/7] Criando Service ========"
+echo "======== [5/8] Criando Service ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-service.yaml
 
-echo "======== [5/7] Criando HPA (Horizontal Pod Autoscaler) ========"
+echo "======== [6/8] Criando HPA (Horizontal Pod Autoscaler) ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-hpa.yaml
 
-echo "======== [6/7] Criando Certificate ========"
+echo "======== [7/8] Criando Certificate ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-certificate.yaml
 
-echo "======== [7/7] Criando Ingress ========"
+echo "======== [8/8] Criando Ingress ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-ingress.yaml
 
 echo "[INFO] Aguardando n8n ficar pronto..."

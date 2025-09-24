@@ -2,27 +2,28 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: postgres-pv
+  name: n8n-data-pv
 spec:
   capacity:
-    storage: 20Gi
+    storage: 2Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: manual
   hostPath:
-    path: /mnt/host-cluster/postgresql
+    path: /mnt/host-cluster/pvc/n8n
     type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-pvc
+  name: n8n-data-pvc
+  namespace: n8n
 spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: manual
-  volumeName: postgres-pv
+  volumeName: n8n-data-pv
   resources:
     requests:
-      storage: 20Gi
+      storage: 2Gi
