@@ -19,20 +19,19 @@ set -e
 # Detectar diretório do projeto
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BACKUP_ROOT="$PROJECT_ROOT/backup"
 
-# Diretórios de backup organizados
-DB_BACKUP_DIR="/mnt/e/cluster/postgresql/backup"
-PVC_BACKUP_DIR="/mnt/e/cluster/pvc/backup"
+# Diretórios de backup no cluster (paths dentro do k3d)
+POSTGRESQL_BACKUP_DIR="/mnt/host-cluster/postgresql/backup"
+PVC_BACKUP_DIR="/mnt/host-cluster/pvc/backup"
 
 # Configurações
 APP_NAME="${1:-n8n}"
 BACKUP_TYPE="${2:-full}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-# Criar estrutura de backup organizada
-BACKUP_DIR="$BACKUP_ROOT/backups/$APP_NAME/$TIMESTAMP"
-DB_BACKUP_PATH="$DB_BACKUP_DIR/$APP_NAME/$TIMESTAMP"
-PVC_BACKUP_PATH="$PVC_BACKUP_DIR/$APP_NAME/$TIMESTAMP"
+
+# Nomes de arquivos de backup
+DB_BACKUP_FILE="$POSTGRESQL_BACKUP_DIR/${APP_NAME}_db_${TIMESTAMP}.sql.gz"
+PVC_BACKUP_FILE="$PVC_BACKUP_DIR/${APP_NAME}_files_${TIMESTAMP}.tar.gz"
 
 # Configurações por aplicação
 case "$APP_NAME" in
@@ -65,35 +64,23 @@ mkdir -p "$BACKUP_DIR"
 # =================================================================
 
 backup_database() {
-    echo "💾 [1/3] Fazendo backup do banco de dados..."
-    
-    # Criar diretório de backup do banco
-    mkdir -p "$DB_BACKUP_PATH"
-    mkdir -p "$BACKUP_DIR"
+    echo "� [1/3] Fazendo backup do banco de dados..."
     
     # Obter senha do PostgreSQL
     DB_PASSWORD=$(kubectl get secret postgres-admin-secret -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)
     
     # Executar backup usando pg_dump dentro do cluster
+    echo "📋 Executando pg_dump para $DB_NAME..."
     kubectl exec -n default postgres-0 -- sh -c "
         export PGPASSWORD='$DB_PASSWORD'
         pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME --verbose --clean --no-owner --no-privileges
-    " > "$DB_BACKUP_PATH/${APP_NAME}_database_${TIMESTAMP}.sql"
+    " | gzip > "$DB_BACKUP_FILE"
     
-    # Comprimir backup do banco
-    gzip "$DB_BACKUP_PATH/${APP_NAME}_database_${TIMESTAMP}.sql"
-    
-    # Link simbólico para manter compatibilidade com scripts existentes
-    ln -sf "$DB_BACKUP_PATH/${APP_NAME}_database_${TIMESTAMP}.sql.gz" "$BACKUP_DIR/${APP_NAME}_database_${TIMESTAMP}.sql.gz"
-    
-    echo "✅ Backup do banco salvo em: $DB_BACKUP_PATH/${APP_NAME}_database_${TIMESTAMP}.sql.gz"
+    echo "✅ Backup do banco salvo em: $DB_BACKUP_FILE"
 }
 
 backup_files() {
     echo "📁 [2/3] Fazendo backup dos arquivos/volumes..."
-    
-    # Criar diretório de backup do PVC
-    mkdir -p "$PVC_BACKUP_PATH"
     
     # Criar um pod temporário para acessar o PVC
     kubectl apply -f - <<EOF
@@ -121,37 +108,38 @@ EOF
     echo "⏳ Aguardando pod de backup ficar pronto..."
     kubectl wait --for=condition=ready pod/backup-pod-${APP_NAME} -n $NAMESPACE --timeout=60s
     
-    # Fazer backup dos arquivos
-    kubectl exec -n $NAMESPACE backup-pod-${APP_NAME} -- tar czf - -C /data . > "$PVC_BACKUP_PATH/${APP_NAME}_files_${TIMESTAMP}.tar.gz"
-    
-    # Link simbólico para manter compatibilidade
-    ln -sf "$PVC_BACKUP_PATH/${APP_NAME}_files_${TIMESTAMP}.tar.gz" "$BACKUP_DIR/${APP_NAME}_files_${TIMESTAMP}.tar.gz"
+    # Fazer backup dos arquivos diretamente para o local correto
+    kubectl exec -n $NAMESPACE backup-pod-${APP_NAME} -- tar czf - -C /data . > "$PVC_BACKUP_FILE"
     
     # Remover pod temporário
     kubectl delete pod backup-pod-${APP_NAME} -n $NAMESPACE
     
-    echo "✅ Backup dos arquivos salvo em: $PVC_BACKUP_PATH/${APP_NAME}_files_${TIMESTAMP}.tar.gz"
+    echo "✅ Backup dos arquivos salvo em: $PVC_BACKUP_FILE"
 }
 
 backup_configs() {
     echo "⚙️ [3/3] Fazendo backup das configurações Kubernetes..."
     
-    # Backup dos manifestos Kubernetes
-    mkdir -p "$BACKUP_DIR/k8s-configs"
+    # Criar diretório temporário para configs
+    TEMP_CONFIG_DIR="/tmp/k8s-configs-${APP_NAME}-${TIMESTAMP}"
+    mkdir -p "$TEMP_CONFIG_DIR"
     
     # Exportar recursos principais (sem secrets por segurança)
-    kubectl get deployment $DEPLOYMENT_NAME -n $NAMESPACE -o yaml > "$BACKUP_DIR/k8s-configs/deployment.yaml"
-    kubectl get service -n $NAMESPACE -o yaml > "$BACKUP_DIR/k8s-configs/services.yaml"
-    kubectl get ingress -n $NAMESPACE -o yaml > "$BACKUP_DIR/k8s-configs/ingress.yaml"
-    kubectl get pvc -n $NAMESPACE -o yaml > "$BACKUP_DIR/k8s-configs/pvc.yaml"
-    kubectl get hpa -n $NAMESPACE -o yaml > "$BACKUP_DIR/k8s-configs/hpa.yaml" 2>/dev/null || true
-    kubectl get certificate -n $NAMESPACE -o yaml > "$BACKUP_DIR/k8s-configs/certificates.yaml" 2>/dev/null || true
+    kubectl get deployment $DEPLOYMENT_NAME -n $NAMESPACE -o yaml > "$TEMP_CONFIG_DIR/deployment.yaml" 2>/dev/null || echo "Deployment não encontrado"
+    kubectl get service -n $NAMESPACE -o yaml > "$TEMP_CONFIG_DIR/services.yaml" 2>/dev/null || echo "Services não encontrados"
+    kubectl get ingress -n $NAMESPACE -o yaml > "$TEMP_CONFIG_DIR/ingress.yaml" 2>/dev/null || echo "Ingress não encontrado"
+    kubectl get pvc -n $NAMESPACE -o yaml > "$TEMP_CONFIG_DIR/pvc.yaml" 2>/dev/null || echo "PVC não encontrado"
+    kubectl get hpa -n $NAMESPACE -o yaml > "$TEMP_CONFIG_DIR/hpa.yaml" 2>/dev/null || echo "HPA não encontrado"
+    kubectl get certificate -n $NAMESPACE -o yaml > "$TEMP_CONFIG_DIR/certificates.yaml" 2>/dev/null || echo "Certificates não encontrados"
     
-    # Comprimir configs
-    tar czf "$BACKUP_DIR/${APP_NAME}_configs_${TIMESTAMP}.tar.gz" -C "$BACKUP_DIR" k8s-configs/
-    rm -rf "$BACKUP_DIR/k8s-configs"
+    # Comprimir configs e salvar no diretório de backup do PVC
+    CONFIG_BACKUP_FILE="$PVC_BACKUP_DIR/${APP_NAME}_configs_${TIMESTAMP}.tar.gz"
+    tar czf "$CONFIG_BACKUP_FILE" -C "/tmp" "$(basename "$TEMP_CONFIG_DIR")"
     
-    echo "✅ Backup das configurações salvo: ${APP_NAME}_configs_${TIMESTAMP}.tar.gz"
+    # Limpar diretório temporário
+    rm -rf "$TEMP_CONFIG_DIR"
+    
+    echo "✅ Backup das configurações salvo em: $CONFIG_BACKUP_FILE"
 }
 
 # =================================================================

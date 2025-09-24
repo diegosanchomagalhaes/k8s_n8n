@@ -18,7 +18,10 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BACKUP_ROOT="$PROJECT_ROOT/backup"
+
+# Diretórios de backup no cluster
+POSTGRESQL_BACKUP_DIR="/mnt/host-cluster/postgresql/backup"
+PVC_BACKUP_DIR="/mnt/host-cluster/pvc/backup"
 
 COMMAND="${1}"
 APP="${2:-n8n}"
@@ -52,29 +55,44 @@ list_backups() {
     echo "📋 Backups disponíveis para $app:"
     echo ""
     
-    if [[ -d "$BACKUP_ROOT/backups/$app" ]]; then
-        for backup_dir in "$BACKUP_ROOT/backups/$app"/*; do
-            if [[ -d "$backup_dir" ]]; then
-                local timestamp=$(basename "$backup_dir")
-                local size=$(du -sh "$backup_dir" 2>/dev/null | cut -f1)
+    # Listar backups do PostgreSQL
+    echo "🐘 Backups do PostgreSQL:"
+    if [[ -d "$POSTGRESQL_BACKUP_DIR" ]]; then
+        find "$POSTGRESQL_BACKUP_DIR" -name "*${app}*" -type f | sort -r | head -10 | while read -r backup_file; do
+            if [[ -f "$backup_file" ]]; then
+                local filename=$(basename "$backup_file")
+                local size=$(du -sh "$backup_file" 2>/dev/null | cut -f1)
+                local timestamp=$(echo "$filename" | grep -o '[0-9]\{8\}_[0-9]\{6\}' || echo "timestamp não encontrado")
                 local date_readable=$(date -d "${timestamp:0:8} ${timestamp:9:2}:${timestamp:11:2}:${timestamp:13:2}" 2>/dev/null || echo "Data inválida")
                 
-                echo "  📁 $timestamp"
+                echo "  📁 $filename"
                 echo "     📅 Data: $date_readable"
                 echo "     💾 Tamanho: $size"
-                
-                # Mostrar arquivos do backup
-                echo "     📋 Arquivos:"
-                ls -la "$backup_dir"/*.gz 2>/dev/null | while read -r line; do
-                    local filename=$(basename $(echo "$line" | awk '{print $NF}'))
-                    local file_size=$(echo "$line" | awk '{print $5}')
-                    echo "        - $filename ($file_size bytes)"
-                done
                 echo ""
             fi
         done
     else
-        echo "   ❌ Nenhum backup encontrado para $app"
+        echo "   ❌ Diretório de backup PostgreSQL não encontrado"
+    fi
+    
+    # Listar backups de PVC
+    echo "� Backups de PVC/Files:"
+    if [[ -d "$PVC_BACKUP_DIR" ]]; then
+        find "$PVC_BACKUP_DIR" -name "*${app}*" -type f | sort -r | head -10 | while read -r backup_file; do
+            if [[ -f "$backup_file" ]]; then
+                local filename=$(basename "$backup_file")
+                local size=$(du -sh "$backup_file" 2>/dev/null | cut -f1)
+                local timestamp=$(echo "$filename" | grep -o '[0-9]\{8\}_[0-9]\{6\}' || echo "timestamp não encontrado")
+                local date_readable=$(date -d "${timestamp:0:8} ${timestamp:9:2}:${timestamp:11:2}:${timestamp:13:2}" 2>/dev/null || echo "Data inválida")
+                
+                echo "  📁 $filename"
+                echo "     📅 Data: $date_readable"
+                echo "     💾 Tamanho: $size"
+                echo ""
+            fi
+        done
+    else
+        echo "   ❌ Diretório de backup PVC não encontrado"
     fi
 }
 
@@ -83,7 +101,7 @@ create_backup() {
     local type="${2:-full}"
     
     echo "🗄️ Criando backup manual de $app (tipo: $type)..."
-    "$BACKUP_ROOT/scripts/backup-app.sh" "$app" "$type"
+    "$SCRIPT_DIR/backup-app.sh" "$app" "$type"
 }
 
 restore_backup() {
@@ -97,7 +115,7 @@ restore_backup() {
     fi
     
     echo "🔄 Restaurando backup de $app ($timestamp)..."
-    "$BACKUP_ROOT/scripts/restore-app.sh" "$app" "$timestamp"
+    "$SCRIPT_DIR/restore-app.sh" "$app" "$timestamp"
 }
 
 clean_backups() {
@@ -106,16 +124,25 @@ clean_backups() {
     
     echo "🧹 Limpando backups de $app mais antigos que $days dias..."
     
-    if [[ -d "$BACKUP_ROOT/backups/$app" ]]; then
-        find "$BACKUP_ROOT/backups/$app" -type d -mtime +$days -exec rm -rf {} \; 2>/dev/null || true
-        echo "✅ Limpeza concluída"
-        
-        # Mostrar backups restantes
-        echo ""
-        list_backups "$app"
-    else
-        echo "❌ Diretório de backups não encontrado para $app"
+    local deleted_count=0
+    
+    # Limpar backups do PostgreSQL
+    if [[ -d "$POSTGRESQL_BACKUP_DIR" ]]; then
+        find "$POSTGRESQL_BACKUP_DIR" -name "*${app}*" -type f -mtime +$days -exec rm -f {} \; 2>/dev/null
+        deleted_count=$((deleted_count + $(find "$POSTGRESQL_BACKUP_DIR" -name "*${app}*" -type f -mtime +$days 2>/dev/null | wc -l)))
     fi
+    
+    # Limpar backups do PVC
+    if [[ -d "$PVC_BACKUP_DIR" ]]; then
+        find "$PVC_BACKUP_DIR" -name "*${app}*" -type f -mtime +$days -exec rm -f {} \; 2>/dev/null
+        deleted_count=$((deleted_count + $(find "$PVC_BACKUP_DIR" -name "*${app}*" -type f -mtime +$days 2>/dev/null | wc -l)))
+    fi
+    
+    echo "✅ Limpeza concluída - $deleted_count arquivos removidos"
+    
+    # Mostrar backups restantes
+    echo ""
+    list_backups "$app"
 }
 
 schedule_backup() {
@@ -124,10 +151,10 @@ schedule_backup() {
     echo "⏰ Ativando backup automático para $app..."
     
     # Aplicar RBAC
-    kubectl apply -f "$BACKUP_ROOT/cronjobs/backup-rbac.yaml"
+    kubectl apply -f "$PROJECT_ROOT/backup/cronjobs/backup-rbac.yaml"
     
     # Aplicar CronJob
-    kubectl apply -f "$BACKUP_ROOT/cronjobs/${app}-backup-cronjob.yaml"
+    kubectl apply -f "$PROJECT_ROOT/backup/cronjobs/${app}-backup-cronjob.yaml"
     
     echo "✅ Backup automático ativado!"
     echo "📅 Agendamento: Diário às 02:00"

@@ -19,7 +19,10 @@ set -e
 # Detectar diretório do projeto
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BACKUP_ROOT="$PROJECT_ROOT/backup"
+
+# Diretórios de backup no cluster
+POSTGRESQL_BACKUP_DIR="/mnt/host-cluster/postgresql/backup"
+PVC_BACKUP_DIR="/mnt/host-cluster/pvc/backup"
 
 # Parâmetros
 APP_NAME="${1}"
@@ -30,20 +33,46 @@ if [[ -z "$APP_NAME" || -z "$BACKUP_TIMESTAMP" ]]; then
     echo "❌ Uso: $0 [app_name] [backup_timestamp] [restore_type]"
     echo ""
     echo "📋 Backups disponíveis:"
-    ls -la "$BACKUP_ROOT/backups/" 2>/dev/null || echo "   Nenhum backup encontrado"
+    echo "🐘 PostgreSQL:"
+    find "$POSTGRESQL_BACKUP_DIR" -name "*${APP_NAME:-}*" -type f 2>/dev/null | head -5 || echo "   Nenhum backup de DB encontrado"
+    echo "📁 PVC/Files:"
+    find "$PVC_BACKUP_DIR" -name "*${APP_NAME:-}*" -type f 2>/dev/null | head -5 || echo "   Nenhum backup de arquivos encontrado"
     exit 1
 fi
 
-BACKUP_DIR="$BACKUP_ROOT/backups/$APP_NAME/$BACKUP_TIMESTAMP"
+# Arquivos de backup específicos
+DB_BACKUP_FILE="$POSTGRESQL_BACKUP_DIR/${APP_NAME}_db_${BACKUP_TIMESTAMP}.sql.gz"
+PVC_BACKUP_FILE="$PVC_BACKUP_DIR/${APP_NAME}_files_${BACKUP_TIMESTAMP}.tar.gz"
+CONFIG_BACKUP_FILE="$PVC_BACKUP_DIR/${APP_NAME}_configs_${BACKUP_TIMESTAMP}.tar.gz"
 
-# Verificar se backup existe
-if [[ ! -d "$BACKUP_DIR" ]]; then
-    echo "❌ Backup não encontrado: $BACKUP_DIR"
-    echo ""
-    echo "📋 Backups disponíveis para $APP_NAME:"
-    ls -la "$BACKUP_ROOT/backups/$APP_NAME/" 2>/dev/null || echo "   Nenhum backup encontrado"
-    exit 1
-fi
+# Verificar se backups existem
+check_backup_files() {
+    local missing_files=()
+    
+    case "$RESTORE_TYPE" in
+        "db")
+            [[ ! -f "$DB_BACKUP_FILE" ]] && missing_files+=("$DB_BACKUP_FILE")
+            ;;
+        "files")
+            [[ ! -f "$PVC_BACKUP_FILE" ]] && missing_files+=("$PVC_BACKUP_FILE")
+            ;;
+        "full")
+            [[ ! -f "$DB_BACKUP_FILE" ]] && missing_files+=("$DB_BACKUP_FILE")
+            [[ ! -f "$PVC_BACKUP_FILE" ]] && missing_files+=("$PVC_BACKUP_FILE")
+            ;;
+    esac
+    
+    if [[ ${#missing_files[@]} -gt 0 ]]; then
+        echo "❌ Arquivos de backup não encontrados:"
+        printf '   - %s\n' "${missing_files[@]}"
+        echo ""
+        echo "📋 Backups disponíveis para $APP_NAME:"
+        find "$POSTGRESQL_BACKUP_DIR" "$PVC_BACKUP_DIR" -name "*${APP_NAME}*" -type f 2>/dev/null | sort || echo "   Nenhum backup encontrado"
+        exit 1
+    fi
+}
+
+check_backup_files
 
 # Configurações por aplicação
 case "$APP_NAME" in
@@ -83,9 +112,8 @@ restore_database() {
     echo "💾 [1/2] Restaurando banco de dados..."
     
     # Verificar se arquivo de backup existe
-    DB_BACKUP_FILE=$(ls "$BACKUP_DIR"/${APP_NAME}_database_*.sql.gz 2>/dev/null | head -1)
-    if [[ -z "$DB_BACKUP_FILE" ]]; then
-        echo "❌ Arquivo de backup do banco não encontrado"
+    if [[ ! -f "$DB_BACKUP_FILE" ]]; then
+        echo "❌ Arquivo de backup do banco não encontrado: $DB_BACKUP_FILE"
         return 1
     fi
     
@@ -99,7 +127,7 @@ restore_database() {
     
     # Descompactar e restaurar banco
     echo "🔄 Restaurando dados do banco..."
-    gunzip -c "$DB_BACKUP_FILE" | kubectl exec -i -n default postgres-0 -- sh -c "
+    zcat "$DB_BACKUP_FILE" | kubectl exec -i -n default postgres-0 -- sh -c "
         export PGPASSWORD='$DB_PASSWORD'
         psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME
     "
@@ -116,9 +144,8 @@ restore_files() {
     echo "📁 [2/2] Restaurando arquivos/volumes..."
     
     # Verificar se arquivo de backup existe
-    FILES_BACKUP_FILE=$(ls "$BACKUP_DIR"/${APP_NAME}_files_*.tar.gz 2>/dev/null | head -1)
-    if [[ -z "$FILES_BACKUP_FILE" ]]; then
-        echo "❌ Arquivo de backup dos arquivos não encontrado"
+    if [[ ! -f "$PVC_BACKUP_FILE" ]]; then
+        echo "❌ Arquivo de backup dos arquivos não encontrado: $PVC_BACKUP_FILE"
         return 1
     fi
     
@@ -156,7 +183,7 @@ EOF
     # Limpar dados antigos e restaurar
     echo "🔄 Limpando dados antigos e restaurando arquivos..."
     kubectl exec -n $NAMESPACE restore-pod-${APP_NAME} -- sh -c "rm -rf /data/* /data/.*" 2>/dev/null || true
-    cat "$FILES_BACKUP_FILE" | kubectl exec -i -n $NAMESPACE restore-pod-${APP_NAME} -- tar xzf - -C /data
+    cat "$PVC_BACKUP_FILE" | kubectl exec -i -n $NAMESPACE restore-pod-${APP_NAME} -- tar xzf - -C /data
     
     # Remover pod temporário
     kubectl delete pod restore-pod-${APP_NAME} -n $NAMESPACE
