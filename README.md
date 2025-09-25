@@ -5,7 +5,26 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.6.0-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.111.1-orange)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.112.5-orange)](https://n8n.io/)
+[![cert-manager](https://img.shields.io/badge/cert--manager-v1.13.1-green)](https://cert-manager.io/)
+
+## 🎯 **Status Atual - Infraestrutura Completa**
+
+- ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer
+- ✅ **PostgreSQL 16**: Persistente com backup/restore
+- ✅ **n8n 1.112.5**: HTTPS via cert-manager + TLS automático
+- ✅ **cert-manager**: Certificados auto-renováveis
+- ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
+- ✅ **Namespaces Organizados**: Separação adequada de recursos
+
+## 🌐 **Pontos de Acesso**
+
+| Serviço        | URL                                       | Porta | Tipo      |
+| -------------- | ----------------------------------------- | ----- | --------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
+| **PostgreSQL** | `localhost:30432`                         | 30432 | NodePort  |
+
+> ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
 ## 📋 Sumário
 
@@ -491,44 +510,64 @@ k3d-local-development/
 
 ## 🚀 Início Rápido - Uso Diário
 
-**APÓS configurar credenciais (veja seção acima):**
+### **📋 Scripts Disponíveis:**
 
 ```bash
-# 🎯 COMANDO ÚNICO PARA QUALQUER SITUAÇÃO:
-./start-all.sh
+# 🎯 OPÇÃO 1: Deploy infraestrutura completa
+./infra/scripts/9.start-infra.sh     # k3d + PostgreSQL + cert-manager
+
+# 🎯 OPÇÃO 2: Deploy n8n após infraestrutura
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh  # n8n + HTTPS + auto-hosts
+
+# 🎯 OPÇÃO 3: Destruir tudo e recomeçar
+./infra/scripts/2.destroy-infra.sh   # Limpeza completa
 ```
 
 > ⚠️ **Se aparecer "Permission denied"**: Execute `find . -name "*.sh" -type f -exec chmod +x {} \;` primeiro!
 
-### **🧠 Script Inteligente - Detecta Automaticamente:**
+### **🧠 Processo Automatizado:**
 
-| Situação                            | O que o script faz                   |
-| ----------------------------------- | ------------------------------------ |
-| 🆕 **Primeiro uso**                 | Cria infraestrutura completa do zero |
-| 🔄 **Reiniciou laptop/WSL2**        | Detecta cluster parado e inicia tudo |
-| ⚡ **Cluster existe, n8n parado**   | Inicia apenas o n8n                  |
-| ✅ **Tudo funcionando**             | Confirma status e mostra URLs        |
-| ❌ **Credenciais não configuradas** | Para e ensina como configurar        |
+| Script                 | O que faz                               | Tempo |
+| ---------------------- | --------------------------------------- | ----- |
+| **9.start-infra.sh**   | k3d cluster + PostgreSQL + cert-manager | ~2min |
+| **1.deploy-n8n.sh**    | n8n + TLS + auto-config /etc/hosts      | ~1min |
+| **2.destroy-infra.sh** | Limpeza completa (cluster + volumes)    | ~30s  |
 
-### **💡 Casos de Uso Diários:**
+### **💡 Fluxo de Uso Típico:**
 
 ```bash
-# ☀️ Segunda-feira (ligou o computador)
-./start-all.sh  # Detecta e cria/inicia automaticamente
+# ☀️ Primeira execução ou após reboot
+./infra/scripts/9.start-infra.sh
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh
 
-# 🔄 Meio do dia (reiniciou WSL2)
-./start-all.sh  # Detecta cluster parado e reinicia
-
-# ✅ Verificar se está tudo ok
-./start-all.sh  # Mostra status atual
+# 🔄 Reiniciar ambiente (se necessário)
+./infra/scripts/2.destroy-infra.sh
+./infra/scripts/9.start-infra.sh
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh
 ```
 
-**Acesso Direto HTTPS:**
+### **🌐 Acesso às Aplicações:**
 
-- 🌐 **n8n**: https://n8n.local.127.0.0.1.nip.io:8443
-- 🐘 **PostgreSQL**: `localhost:5432` (user: `postgres`)
+| Serviço        | URL                                       | Credenciais                              |
+| -------------- | ----------------------------------------- | ---------------------------------------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | Configurar no primeiro acesso            |
+| **PostgreSQL** | `localhost:30432`                         | user: `admin`, senha: definida no secret |
 
-> **💪 Você nunca mais precisa lembrar de outros comandos! Este script resolve tudo automaticamente.**
+### **� Configuração da Porta 8443**
+
+A porta **8443** é usada porque:
+
+- ✅ **Sem privilégios root**: Portas < 1024 requerem sudo
+- ✅ **k3d mapping**: `443 (cluster) → 8443 (host)`
+- ✅ **Configuração**: Definida em `/infra/k3d/k3d-config.yaml`
+
+```yaml
+# /infra/k3d/k3d-config.yaml
+ports:
+  - port: 8443:443 # HTTPS: Host:8443 → Cluster:443
+```
+
+> **💪 Scripts inteligentes: Auto-configuram /etc/hosts e verificam certificados TLS automaticamente!**
 
 ### 📋 **Método Manual (passo a passo):**
 
