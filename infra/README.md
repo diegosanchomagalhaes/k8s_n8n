@@ -30,7 +30,7 @@ infra/
 
 1. ✅ Cria cluster k3d com configuração personalizada
 2. ✅ Deploy PostgreSQL 16 com volume persistente (20Gi)
-3. ✅ Instala cert-manager v1.13.1
+3. ✅ Instala cert-manager v1.18.2
 4. ✅ Configura ClusterIssuer para certificados self-signed
 5. ✅ Verifica saúde de todos os componentes
 
@@ -80,7 +80,7 @@ ports:
 
 ### **cert-manager**
 
-- **Versão**: v1.13.1
+- **Versão**: v1.18.2
 - **ClusterIssuer**: `k3d-selfsigned` (certificados self-signed)
 - **Namespace**: `cert-manager`
 
@@ -143,7 +143,7 @@ netstat -tulpn | grep 30432
 ```bash
 # Reinstalar cert-manager
 kubectl delete namespace cert-manager
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
 
 # Verificar ClusterIssuer
 kubectl get clusterissuer k3d-selfsigned -o yaml

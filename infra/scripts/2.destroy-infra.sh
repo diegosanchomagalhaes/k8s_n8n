@@ -22,7 +22,8 @@ kubectl delete -f infra/cert-manager/cluster-issuer-selfsigned.yaml --ignore-not
 # Remover namespace cert-manager (isso remove tudo dentro)
 kubectl delete namespace cert-manager --ignore-not-found
 # Remover CRDs e recursos globais do cert-manager
-kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml --ignore-not-found
+echo "🗑️  Removendo cert-manager..."
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml --ignore-not-found
 
 echo "======== [3/3] Removendo cluster k3d ========"
 # Isso remove automaticamente todos os PVCs e dados

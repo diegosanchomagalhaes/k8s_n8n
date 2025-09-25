@@ -6,10 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "======== Instalando cert-manager ========"
-
-# Instalar cert-manager via kubectl (método oficial)
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+echo "⚙️  Instalando cert-manager v1.18.2..."
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
 
 # Aguarda os pods ficarem prontos
 echo "[INFO] Aguardando pods do cert-manager ficarem prontos..."
