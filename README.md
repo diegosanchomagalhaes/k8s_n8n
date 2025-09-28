@@ -5,14 +5,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.6.0-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.112.5-orange)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.112.6-orange)](https://n8n.io/)
 [![cert-manager](https://img.shields.io/badge/cert--manager-v1.18.2-green)](https://cert-manager.io/)
 
 ## 🎯 **Status Atual - Infraestrutura Completa**
 
 - ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer
 - ✅ **PostgreSQL 16**: Persistente com backup/restore
-- ✅ **n8n 1.112.5**: HTTPS via cert-manager + TLS automático
+- ✅ **n8n 1.112.6**: HTTPS via cert-manager + TLS automático
 - ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
 - ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
 - ✅ **Namespaces Organizados**: Separação adequada de recursos

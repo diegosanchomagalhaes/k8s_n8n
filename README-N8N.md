@@ -20,7 +20,7 @@
 
 ### Características do Deploy
 
-- **Versão**: n8n 1.112.5
+- **Versão**: n8n 1.112.6
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
 - **Acesso**: HTTPS via Traefik Ingress
