@@ -28,6 +28,7 @@
 
 ## 📋 Sumário
 
+- [Pré-requisitos](#-pré-requisitos) ⚠️ **LEIA PRIMEIRO (Windows/WSL2)**
 - [Instalação](#-instalação)
 - [Visão Geral](#-visão-geral)
 - [Por que k3d?](#-por-que-k3d-pensando-em-produção)
@@ -40,7 +41,54 @@
 - [Deploy para Produção](#-deploy-para-produção)
 - [Contribuindo](#-contribuindo-e-fork-do-projeto)
 
-## 🚀 Instalação
+## � Pré-requisitos
+
+### **🐳 Docker Desktop (Windows/WSL2)**
+
+> ⚠️ **IMPORTANTE**: Se você está usando Windows com WSL2, é **obrigatório** ter o Docker Desktop instalado e rodando!
+
+#### **Windows + WSL2:**
+
+```bash
+# 1. Instalar Docker Desktop para Windows
+# Download: https://docs.docker.com/desktop/windows/install/
+
+# 2. Verificar se Docker Desktop está rodando
+docker version
+# Deve mostrar Client e Server version
+
+# 3. Verificar integração WSL2
+docker context ls
+# Deve mostrar 'default' como atual
+```
+
+#### **❌ Problema Comum:**
+
+```bash
+k3d cluster list
+# ERRO: Cannot connect to the Docker daemon at unix:///var/run/docker.sock
+```
+
+**✅ Solução:**
+
+1. **Abrir Docker Desktop** no Windows
+2. **Aguardar** inicialização completa (ícone azul na system tray)
+3. **Verificar** integração WSL2: Settings → Resources → WSL Integration
+4. **Habilitar** para sua distribuição WSL2
+
+#### **🔧 Configuração WSL2 Integration:**
+
+- Docker Desktop → Settings → Resources → WSL Integration
+- ✅ Enable integration with my default WSL distro
+- ✅ Enable integration with additional distros: **Sua distribuição**
+
+### **🛠️ Outros Pré-requisitos:**
+
+- **kubectl**: Cliente Kubernetes
+- **k3d**: Kubernetes in Docker
+- **git**: Controle de versão
+
+## �🚀 Instalação
 
 ### **📥 Opção 1: Clone via HTTPS (Simples)**
 
@@ -747,7 +795,56 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ## 🔧 Solução de Problemas
 
-### **🚫 Problemas de Execução de Scripts**
+### **� Problemas Docker Desktop (Windows/WSL2)**
+
+#### Cannot connect to the Docker daemon
+
+```bash
+# ERRO comum:
+k3d cluster list
+# FATA[0000] runtime failed to list nodes: docker failed to get containers
+# Cannot connect to the Docker daemon at unix:///var/run/docker.sock
+
+# ✅ SOLUÇÃO:
+```
+
+**Passo a passo:**
+
+1. **Abrir Docker Desktop** no Windows
+2. **Aguardar** inicialização completa (ícone Docker azul na system tray)
+3. **Verificar integração WSL2**:
+   - Docker Desktop → Settings → Resources → WSL Integration
+   - ✅ Enable integration with my default WSL distro
+   - ✅ Enable integration with additional distros
+4. **Reiniciar terminal WSL2**
+5. **Testar**: `docker version` deve mostrar Client e Server
+
+#### Docker Desktop não inicia
+
+```bash
+# Verificar se Hyper-V e WSL2 estão habilitados
+wsl --status
+# Deve mostrar WSL2 como versão padrão
+
+# Se necessário, definir WSL2 como padrão:
+wsl --set-default-version 2
+```
+
+#### k3d cluster não cria
+
+```bash
+# ERRO: k3d cluster create falha
+# SOLUÇÃO: Verificar recursos do Docker
+
+# 1. Docker Desktop → Settings → Resources
+# 2. Alocar pelo menos:
+#    - Memory: 4GB
+#    - CPUs: 2
+#    - Disk: 20GB
+# 3. Apply & Restart Docker Desktop
+```
+
+### **�🚫 Problemas de Execução de Scripts**
 
 #### Permission denied ao executar scripts
 
