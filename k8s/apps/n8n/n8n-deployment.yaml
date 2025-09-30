@@ -53,7 +53,7 @@ spec:
               echo "Database setup complete!"
       containers:
         - name: n8n
-          image: n8nio/n8n:1.112.6
+          image: n8nio/n8n:1.113.3
           ports:
             - containerPort: 5678
           env:
