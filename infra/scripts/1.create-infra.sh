@@ -11,7 +11,7 @@ k3d cluster create --config infra/k3d/k3d-config.yaml
 
 echo "======== [2/3] Instalando cert-manager ========"
 # Instalar cert-manager via kubectl (método oficial)
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
 
 echo "[INFO] Aguardando pods do cert-manager ficarem prontos..."
 kubectl wait --for=condition=available --timeout=300s deployment/cert-manager -n cert-manager

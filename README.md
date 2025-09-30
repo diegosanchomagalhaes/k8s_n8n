@@ -1,48 +1,119 @@
-# 🏗️ K8s n8n - Ambiente Kubernetes Completo
+# K3D Local - Ambiente de Desenvolvimento Kubernetes
 
-> 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento Kubernetes completo com k3d, PostgreSQL persistente, n8n automação e sistema de backup profissional. **100% compatível com qualquer cluster Kubernetes de produção**!
+> 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento local completo usando k3d, PostgreSQL persistente e aplicações automáticas. **100% compatível com qualquer cluster Kubernetes de produção** - AKS, EKS, GKE ou self-managed!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.6.0-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.112.4-orange)](https://n8n.io/)
-[![Backup System](https://img.shields.io/badge/Backup-Automated-green)](./backup/README.md)
+[![n8n](https://img.shields.io/badge/n8n-1.113.3-orange)](https://n8n.io/)
+[![cert-manager](https://img.shields.io/badge/cert--manager-v1.18.2-green)](https://cert-manager.io/)
+
+## 🎯 **Status Atual - Infraestrutura Completa**
+
+- ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer
+- ✅ **PostgreSQL 16**: Persistente com backup/restore
+- ✅ **n8n 1.113.3**: HTTPS via cert-manager + TLS automático
+- ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
+- ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
+- ✅ **Namespaces Organizados**: Separação adequada de recursos
+
+## 🌐 **Pontos de Acesso**
+
+| Serviço        | URL                                       | Porta | Tipo      |
+| -------------- | ----------------------------------------- | ----- | --------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
+| **PostgreSQL** | `localhost:30432`                         | 30432 | NodePort  |
+
+> ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
 ## 📋 Sumário
 
-- [🎯 Início Rápido](#-início-rápido)
-- [📂 Estrutura do Projeto](#-estrutura-do-projeto)
-- [🏗️ Arquitetura](#️-arquitetura)
-- [🗄️ Sistema de Backup](#️-sistema-de-backup)
-- [📚 Documentação](#-documentação)
-- [🛠️ Scripts Disponíveis](#️-scripts-disponíveis)
-- [🔧 Configuração](#-configuração)
-- [🚨 Troubleshooting](#-troubleshooting)
-- [🎯 Produção](#-deploy-para-produção)
+- [Pré-requisitos](#-pré-requisitos) ⚠️ **LEIA PRIMEIRO (Windows/WSL2)**
+- [Instalação](#-instalação)
+- [Visão Geral](#-visão-geral)
+- [Por que k3d?](#-por-que-k3d-pensando-em-produção)
+- [Configuração SSH](#-configuração-ssh-para-github-opcional)
+- [Início Rápido](#-início-rápido---uso-diário)
+- [Documentação Modular](#-documentação-modular)
+- [Aplicações Disponíveis](#-aplicações-disponíveis)
+- [Scripts Disponíveis](#-scripts-disponíveis)
+- [Solução de Problemas](#-solução-de-problemas)
+- [Deploy para Produção](#-deploy-para-produção)
+- [Contribuindo](#-contribuindo-e-fork-do-projeto)
 
-## 🎯 Início Rápido
+## � Pré-requisitos
 
-### **⚡ Setup Completo em 3 Comandos**
+### **🐳 Docker Desktop (Windows/WSL2)**
+
+> ⚠️ **IMPORTANTE**: Se você está usando Windows com WSL2, é **obrigatório** ter o Docker Desktop instalado e rodando!
+
+#### **Windows + WSL2:**
 
 ```bash
-# 1. Configurar credenciais
-cp infra/postgres/postgres-secret-admin.yaml.template \
-   infra/postgres/postgres-secret-admin.yaml
-# Edite e defina sua senha PostgreSQL
+# 1. Instalar Docker Desktop para Windows
+# Download: https://docs.docker.com/desktop/windows/install/
 
-# 2. Subir infraestrutura completa
-./infra/scripts/10.start-infra.sh
+# 2. Verificar se Docker Desktop está rodando
+docker version
+# Deve mostrar Client e Server version
 
-# 3. Deploy n8n
-./k8s/apps/n8n/scripts/1.deploy-n8n.sh
+# 3. Verificar integração WSL2
+docker context ls
+# Deve mostrar 'default' como atual
 ```
 
-### **🌐 Acesso Rápido**
+#### **❌ Problema Comum:**
 
-- **n8n**: https://n8n.local.127.0.0.1.nip.io
-- **PostgreSQL**: localhost:30432
+```bash
+k3d cluster list
+# ERRO: Cannot connect to the Docker daemon at unix:///var/run/docker.sock
+```
 
----
+**✅ Solução:**
+
+1. **Abrir Docker Desktop** no Windows
+2. **Aguardar** inicialização completa (ícone azul na system tray)
+3. **Verificar** integração WSL2: Settings → Resources → WSL Integration
+4. **Habilitar** para sua distribuição WSL2
+
+#### **🔧 Configuração WSL2 Integration:**
+
+- Docker Desktop → Settings → Resources → WSL Integration
+- ✅ Enable integration with my default WSL distro
+- ✅ Enable integration with additional distros: **Sua distribuição**
+
+### **🛠️ Outros Pré-requisitos:**
+
+- **kubectl**: Cliente Kubernetes
+- **k3d**: Kubernetes in Docker
+- **git**: Controle de versão
+
+## �🚀 Instalação
+
+### **📥 Opção 1: Clone via HTTPS (Simples)**
+
+```bash
+# Clone o repositório via HTTPS
+git clone https://github.com/SEU_USUARIO/k3d-local-development.git
+cd k3d-local-development
+```
+
+### **📥 Opção 2: Clone via SSH (Recomendado)**
+
+````bash
+```bash
+# Clone o repositório via SSH (requer configuração SSH)
+git clone git@github.com:SEU_USUARIO/k3d-local-development.git
+cd k3d-local-development
+
+# OU Clone via HTTPS (pede senha/token)
+git clone https://github.com/SEU_USUARIO/k3d-local-development.git
+cd k3d-local-development
+````
+
+> 💡 **SSH é melhor para desenvolvimento**: Não pede senha, mais seguro. Veja [seção SSH](#-configuração-ssh-para-github-opcional) abaixo.
+>
+> ⚠️ **IMPORTANTE**: Substitua `SEU_USUARIO` pelo seu usuário real do GitHub!
 
 ### **⚙️ Configuração Inicial:**
 
@@ -487,44 +558,64 @@ k3d-local-development/
 
 ## 🚀 Início Rápido - Uso Diário
 
-**APÓS configurar credenciais (veja seção acima):**
+### **📋 Scripts Disponíveis:**
 
 ```bash
-# 🎯 COMANDO ÚNICO PARA QUALQUER SITUAÇÃO:
-./start-all.sh
+# 🎯 OPÇÃO 1: Deploy infraestrutura completa
+./infra/scripts/9.start-infra.sh     # k3d + PostgreSQL + cert-manager
+
+# 🎯 OPÇÃO 2: Deploy n8n após infraestrutura
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh  # n8n + HTTPS + auto-hosts
+
+# 🎯 OPÇÃO 3: Destruir tudo e recomeçar
+./infra/scripts/2.destroy-infra.sh   # Limpeza completa
 ```
 
 > ⚠️ **Se aparecer "Permission denied"**: Execute `find . -name "*.sh" -type f -exec chmod +x {} \;` primeiro!
 
-### **🧠 Script Inteligente - Detecta Automaticamente:**
+### **🧠 Processo Automatizado:**
 
-| Situação                            | O que o script faz                   |
-| ----------------------------------- | ------------------------------------ |
-| 🆕 **Primeiro uso**                 | Cria infraestrutura completa do zero |
-| 🔄 **Reiniciou laptop/WSL2**        | Detecta cluster parado e inicia tudo |
-| ⚡ **Cluster existe, n8n parado**   | Inicia apenas o n8n                  |
-| ✅ **Tudo funcionando**             | Confirma status e mostra URLs        |
-| ❌ **Credenciais não configuradas** | Para e ensina como configurar        |
+| Script                 | O que faz                               | Tempo |
+| ---------------------- | --------------------------------------- | ----- |
+| **9.start-infra.sh**   | k3d cluster + PostgreSQL + cert-manager | ~2min |
+| **1.deploy-n8n.sh**    | n8n + TLS + auto-config /etc/hosts      | ~1min |
+| **2.destroy-infra.sh** | Limpeza completa (cluster + volumes)    | ~30s  |
 
-### **💡 Casos de Uso Diários:**
+### **💡 Fluxo de Uso Típico:**
 
 ```bash
-# ☀️ Segunda-feira (ligou o computador)
-./start-all.sh  # Detecta e cria/inicia automaticamente
+# ☀️ Primeira execução ou após reboot
+./infra/scripts/9.start-infra.sh
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh
 
-# 🔄 Meio do dia (reiniciou WSL2)
-./start-all.sh  # Detecta cluster parado e reinicia
-
-# ✅ Verificar se está tudo ok
-./start-all.sh  # Mostra status atual
+# 🔄 Reiniciar ambiente (se necessário)
+./infra/scripts/2.destroy-infra.sh
+./infra/scripts/9.start-infra.sh
+./k8s/apps/n8n/scripts/1.deploy-n8n.sh
 ```
 
-**Acesso Direto HTTPS:**
+### **🌐 Acesso às Aplicações:**
 
-- 🌐 **n8n**: https://n8n.local.127.0.0.1.nip.io:8443
-- 🐘 **PostgreSQL**: `localhost:5432` (user: `postgres`)
+| Serviço        | URL                                       | Credenciais                              |
+| -------------- | ----------------------------------------- | ---------------------------------------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | Configurar no primeiro acesso            |
+| **PostgreSQL** | `localhost:30432`                         | user: `admin`, senha: definida no secret |
 
-> **💪 Você nunca mais precisa lembrar de outros comandos! Este script resolve tudo automaticamente.**
+### **� Configuração da Porta 8443**
+
+A porta **8443** é usada porque:
+
+- ✅ **Sem privilégios root**: Portas < 1024 requerem sudo
+- ✅ **k3d mapping**: `443 (cluster) → 8443 (host)`
+- ✅ **Configuração**: Definida em `/infra/k3d/k3d-config.yaml`
+
+```yaml
+# /infra/k3d/k3d-config.yaml
+ports:
+  - port: 8443:443 # HTTPS: Host:8443 → Cluster:443
+```
+
+> **💪 Scripts inteligentes: Auto-configuram /etc/hosts e verificam certificados TLS automaticamente!**
 
 ### 📋 **Método Manual (passo a passo):**
 
@@ -704,7 +795,56 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ## 🔧 Solução de Problemas
 
-### **🚫 Problemas de Execução de Scripts**
+### **� Problemas Docker Desktop (Windows/WSL2)**
+
+#### Cannot connect to the Docker daemon
+
+```bash
+# ERRO comum:
+k3d cluster list
+# FATA[0000] runtime failed to list nodes: docker failed to get containers
+# Cannot connect to the Docker daemon at unix:///var/run/docker.sock
+
+# ✅ SOLUÇÃO:
+```
+
+**Passo a passo:**
+
+1. **Abrir Docker Desktop** no Windows
+2. **Aguardar** inicialização completa (ícone Docker azul na system tray)
+3. **Verificar integração WSL2**:
+   - Docker Desktop → Settings → Resources → WSL Integration
+   - ✅ Enable integration with my default WSL distro
+   - ✅ Enable integration with additional distros
+4. **Reiniciar terminal WSL2**
+5. **Testar**: `docker version` deve mostrar Client e Server
+
+#### Docker Desktop não inicia
+
+```bash
+# Verificar se Hyper-V e WSL2 estão habilitados
+wsl --status
+# Deve mostrar WSL2 como versão padrão
+
+# Se necessário, definir WSL2 como padrão:
+wsl --set-default-version 2
+```
+
+#### k3d cluster não cria
+
+```bash
+# ERRO: k3d cluster create falha
+# SOLUÇÃO: Verificar recursos do Docker
+
+# 1. Docker Desktop → Settings → Resources
+# 2. Alocar pelo menos:
+#    - Memory: 4GB
+#    - CPUs: 2
+#    - Disk: 20GB
+# 3. Apply & Restart Docker Desktop
+```
+
+### **�🚫 Problemas de Execução de Scripts**
 
 #### Permission denied ao executar scripts
 
