@@ -278,7 +278,7 @@ wsl --shutdown
 ## 📚 Recursos Adicionais
 
 - [WSL2 Official Docs](https://docs.microsoft.com/en-us/windows/wsl/)
-- [k3d System Requirements](https://k3d.io/v5.4.6/usage/advanced/podman/)
+- [k3d System Requirements](https://k3d.io/v5.8.0/usage/advanced/podman/)
 - [Docker WSL2 Backend](https://docs.docker.com/desktop/wsl/)
 
 ---

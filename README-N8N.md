@@ -23,6 +23,7 @@
 - **Versão**: n8n 1.113.3
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
+- **Cache**: Redis 8.2.1 (performance otimizada)
 - **Acesso**: HTTPS via Traefik Ingress
 - **Scaling**: HPA (Horizontal Pod Autoscaler)
 - **Certificados**: TLS via cert-manager
@@ -40,7 +41,16 @@ n8n/
 ├── n8n-service.yaml           # Service ClusterIP
 ├── n8n-hpa.yaml               # Auto-scaling
 ├── n8n-certificate.yaml       # Certificado TLS
-└── n8n-ingress.yaml           # Ingress HTTPS
+├── n8n-ingress.yaml           # Ingress HTTPS
+├── redis-deployment.yaml       # Redis cache
+├── redis-service.yaml          # Service Redis
+├── redis-pvc.yaml              # Storage Redis
+├── redis-secret.yaml.template  # Credenciais Redis
+└── scripts/
+    ├── 1.deploy-n8n.sh        # Deploy n8n + Redis integrado
+    ├── 2.destroy-n8n.sh       # Remove n8n + Redis
+    ├── 3.start-n8n.sh         # Start/restart com verificação Redis
+    └── ...
 ```
 
 ### Fluxo de Dados

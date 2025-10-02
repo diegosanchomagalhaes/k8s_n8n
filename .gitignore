@@ -369,3 +369,4 @@ Icon?
 # ==================================================================
 infra/postgres/postgres-secret-admin.yaml
 k8s/apps/n8n/n8n-secret-db.yaml
+k8s/apps/n8n/redis-secret.yaml

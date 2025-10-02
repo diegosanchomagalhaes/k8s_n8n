@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Backup PostgreSQL Databases
-# Cria backup das bases de dados PostgreSQL para /mnt/e/cluster/postgresql/backup
+# Cria backup das bases de dados PostgreSQL usando kubectl
 
 set -e
 
 # Configurações
-NAMESPACE="default"
+NAMESPACE="postgres"
 POSTGRES_POD="postgres-0"
-BACKUP_BASE_DIR="/mnt/e/cluster/postgresql/backup"
+BACKUP_BASE_DIR="./backups/postgresql"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_DIR="${BACKUP_BASE_DIR}/${TIMESTAMP}"
 

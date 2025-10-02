@@ -69,22 +69,35 @@ if ! k3d cluster list k3d-cluster 2>/dev/null | grep -q "running"; then
     echo "🗄️ Configurando PostgreSQL..."
     "$PROJECT_ROOT/infra/scripts/5.create-postgres.sh"
     
-    echo "🔒 Configurando cert-manager..."
+    echo "� Configurando Redis..."
+    "$PROJECT_ROOT/infra/scripts/11.create-redis.sh"
+    
+    echo "�🔒 Configurando cert-manager..."
     "$PROJECT_ROOT/infra/scripts/7.create-cert-manager.sh"
     
     echo "⏳ Aguardando infraestrutura ficar pronta..."
-    kubectl wait --for=condition=ready pod -l app=postgres --timeout=300s
+    kubectl wait --for=condition=ready pod -l app=postgres -n postgres --timeout=300s
+    kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=300s
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=cert-manager -n cert-manager --timeout=300s
 else
     echo "✅ Cluster já está rodando!"
     
     # Verificar se PostgreSQL está rodando
-    if ! kubectl get pods | grep -q "postgres.*Running"; then
+    if ! kubectl get pods -n postgres 2>/dev/null | grep -q "postgres.*Running"; then
         echo "🗄️ Iniciando PostgreSQL..."
         "$PROJECT_ROOT/infra/scripts/5.create-postgres.sh"
-        kubectl wait --for=condition=ready pod -l app=postgres --timeout=180s
+        kubectl wait --for=condition=ready pod -l app=postgres -n postgres --timeout=180s
     else
         echo "✅ PostgreSQL já está rodando!"
+    fi
+    
+    # Verificar se Redis está rodando
+    if ! kubectl get pods -n redis 2>/dev/null | grep -q "redis.*Running"; then
+        echo "🔴 Iniciando Redis..."
+        "$PROJECT_ROOT/infra/scripts/11.create-redis.sh"
+        kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=180s
+    else
+        echo "✅ Redis já está rodando!"
     fi
     
     # Verificar se cert-manager está rodando
@@ -102,7 +115,8 @@ echo "🎉 Infraestrutura pronta!"
 echo ""
 echo "📦 Componentes disponíveis:"
 echo "   - k3d cluster: k3d-cluster"
-echo "   - PostgreSQL: postgres.default.svc.cluster.local:5432"
+echo "   - PostgreSQL: postgres.postgres.svc.cluster.local:5432"
+echo "   - Redis: redis.redis.svc.cluster.local:6379"
 echo "   - cert-manager: ClusterIssuer k3d-selfsigned"
 echo ""
 echo "🚀 Para iniciar aplicações, execute os scripts em k8s/apps/*/scripts/"

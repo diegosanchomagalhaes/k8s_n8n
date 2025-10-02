@@ -4,12 +4,15 @@ set -e
 echo "📂 Criando nova estrutura de diretórios organizada..."
 
 # Diretório base do cluster
-CLUSTER_BASE="/mnt/e/cluster"
+# CLUSTER_BASE não necessário - usando local-path StorageClass
+# Volumes são gerenciados automaticamente pelo k3d
 
 # Criar estrutura de diretórios
 echo "🗂️ Criando diretórios base..."
 mkdir -p "$CLUSTER_BASE/postgresql"
 mkdir -p "$CLUSTER_BASE/postgresql/backup"
+# Redis usa PVC com local-path - não precisa criar diretórios manuais
+# mkdir -p "$CLUSTER_BASE/redis"
 mkdir -p "$CLUSTER_BASE/pvc"
 mkdir -p "$CLUSTER_BASE/pvc/backup"
 
@@ -42,6 +45,8 @@ echo "3. Deploy do n8n com: ./k8s/apps/n8n/scripts/1.deploy-n8n.sh"
 echo ""
 echo "💡 Os novos locais serão:"
 echo "   - PostgreSQL data: $CLUSTER_BASE/postgresql/"
+echo "   - Redis: PVC automático (local-path)"
 echo "   - PVC data: $CLUSTER_BASE/pvc/"
 echo "   - DB backups: $CLUSTER_BASE/postgresql/backup/"
+echo "   - Redis backups: Via kubectl (comando manual)"
 echo "   - PVC backups: $CLUSTER_BASE/pvc/backup/"

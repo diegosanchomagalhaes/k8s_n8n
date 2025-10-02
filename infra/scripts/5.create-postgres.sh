@@ -8,17 +8,17 @@ cd "$PROJECT_ROOT"
 
 echo "======== Criando PostgreSQL na infra ========"
 
-echo "[1/3] Aplicando PV/PVC..."
-kubectl apply -f infra/postgres/postgres-pv.yaml
-
-echo "[2/3] Aplicando Secret admin..."
-kubectl apply -f infra/postgres/postgres-secret-admin.yaml
-
-echo "[3/3] Aplicando StatefulSet + Service..."
+echo "[1/4] Criando namespace postgres..."
 kubectl apply -f infra/postgres/postgres.yaml
 
-echo "[INFO] Aguardando PostgreSQL ficar pronto..."
-kubectl rollout status statefulset/postgres -n default
+echo "[2/4] Aplicando PV/PVC..."
+kubectl apply -f infra/postgres/postgres-pv.yaml
 
-echo "======== PostgreSQL pronto no namespace default ========"
-echo "Host interno: postgres.default.svc.cluster.local:5432"
+echo "[3/4] Aplicando Secret admin..."
+kubectl apply -f infra/postgres/postgres-secret-admin.yaml
+
+echo "[4/4] Aguardando PostgreSQL ficar pronto..."
+kubectl rollout status statefulset/postgres -n postgres
+
+echo "======== PostgreSQL pronto no namespace postgres ========"
+echo "Host interno: postgres.postgres.svc.cluster.local:5432"

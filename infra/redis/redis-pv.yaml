@@ -1,12 +1,12 @@
-# PostgreSQL PVC - Using k3d default local-path storage class
+# Redis PVC - Using k3d default local-path storage class
 # This provides automatic local storage management on Linux
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-pvc
-  namespace: postgres
+  name: redis-pvc
+  namespace: redis
   labels:
-    app: postgres
+    app: redis
     component: storage
 spec:
   accessModes:
@@ -14,4 +14,4 @@ spec:
   storageClassName: local-path # k3d default storage class
   resources:
     requests:
-      storage: 20Gi
+      storage: 5Gi

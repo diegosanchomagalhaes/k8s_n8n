@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Restore PostgreSQL Databases
-# Restaura backup das bases de dados PostgreSQL a partir de /mnt/e/cluster/postgresql/backup
+# Restaura backup das bases de dados PostgreSQL usando kubectl
 
 set -e
 
 # Configurações
-NAMESPACE="default"
+NAMESPACE="postgres"
 POSTGRES_POD="postgres-0"
-BACKUP_BASE_DIR="/mnt/e/cluster/postgresql/backup"
+BACKUP_BASE_DIR="./backups/postgresql"
 
 # Cores para output
 RED='\033[0;31m'

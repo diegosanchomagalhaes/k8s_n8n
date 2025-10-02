@@ -72,7 +72,7 @@ backup/
 
 - **Agendamento**: Diário às 02:00
 - **Retenção**: Últimos 7 backups
-- **Local**: `/mnt/e/postgresql/backups`
+- **Local**: `./backups/postgresql/` (diretório local)
 - **Compressão**: Automática (gzip)
 
 ### Estrutura dos Backups
@@ -181,7 +181,7 @@ kubectl describe cronjob n8n-backup -n n8n
 3. **Espaço insuficiente**
 
    ```bash
-   df -h /mnt/e/postgresql/backups
+   df -h ./backups/
    ./backup/scripts/manage-backups.sh clean n8n 3
    ```
 

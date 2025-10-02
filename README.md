@@ -3,8 +3,9 @@
 > 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento local completo usando k3d, PostgreSQL persistente e aplicações automáticas. **100% compatível com qualquer cluster Kubernetes de produção** - AKS, EKS, GKE ou self-managed!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![k3d](https://img.shields.io/badge/k3d-v5.6.0-blue)](https://k3d.io/)
+[![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-8.2.1-red)](https://redis.io/)
 [![n8n](https://img.shields.io/badge/n8n-1.113.3-orange)](https://n8n.io/)
 [![cert-manager](https://img.shields.io/badge/cert--manager-v1.18.2-green)](https://cert-manager.io/)
 
@@ -12,7 +13,8 @@
 
 - ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer
 - ✅ **PostgreSQL 16**: Persistente com backup/restore
-- ✅ **n8n 1.113.3**: HTTPS via cert-manager + TLS automático
+- ✅ **Redis 8.2.1**: Cache para n8n com persistência
+- ✅ **n8n 1.113.3**: HTTPS via cert-manager + TLS automático + Redis cache
 - ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
 - ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
 - ✅ **Namespaces Organizados**: Separação adequada de recursos
@@ -23,6 +25,7 @@
 | -------------- | ----------------------------------------- | ----- | --------- |
 | **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
 | **PostgreSQL** | `localhost:30432`                         | 30432 | NodePort  |
+| **Redis**      | `redis.redis.svc.cluster.local:6379`        | 6379  | ClusterIP |
 
 > ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
@@ -185,7 +188,7 @@ Este projeto configura um ambiente de desenvolvimento local completo usando:
 - **n8n**: Plataforma de automação de workflows
 - **Traefik**: Ingress controller (padrão do k3d)
 - **cert-manager**: Gerenciamento de certificados TLS self-signed
-- **Storage persistente**: Dados salvos em Exemplo: `/mnt/e/postgresql`
+- **Storage persistente**: PVCs automáticos com local-path (padrão k3d)
 
 ## 🚀 Por que k3d? Pensando em Produção
 
@@ -293,12 +296,12 @@ Ao dominar este ambiente, você aprende:
 
 - **Docker Desktop** com WSL2 habilitado
 - **kubectl** ([instalação](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/))
-- **k3d** v5.x ([instalação](https://k3d.io/v5.4.6/#installation))
+- **k3d** v5.8.3+ ([instalação](https://k3d.io/v5.8.0/#installation))
 
 ### Sistema
 
 - **WSL2** com distribuição Linux
-- **Acesso ao SSD NVMe**: `/mnt/e/postgresql` (pasta deve existir)
+- **Storage Class**: local-path (automático k3d - sem configuração manual)
 
 ### **🔓 Permissões de Execução**
 
@@ -391,6 +394,7 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 | 🛠️ **Aplicação** | 📝 **Descrição**       | 🌐 **Acesso**                                       | 📖 **Documentação**                    |
 | ---------------- | ---------------------- | --------------------------------------------------- | -------------------------------------- |
 | **n8n**          | Automação de workflows | https://n8n.local.127.0.0.1.nip.io:8443             | **[README-N8N.md](README-N8N.md)**     |
+| **Redis**        | Cache & Session Store  | Interno (`redis.n8n.svc.cluster.local:6379`)        | Cache para n8n performance             |
 | **PostgreSQL**   | Banco de dados         | Interno (`postgres.default.svc.cluster.local:5432`) | **[README-INFRA.md](README-INFRA.md)** |
 
 ### **🔄 Adicionando Novas Aplicações**
@@ -529,8 +533,8 @@ kubectl version --client
 # Verificar k3d
 k3d version
 
-# Verificar acesso ao diretório de dados (mount do Windows)
-ls -la /mnt/e/postgresql/
+# Verificar se Docker está funcionando
+docker ps
 
 # Verificar se está no WSL2
 uname -a
@@ -718,14 +722,14 @@ kubectl get ingress --all-namespaces
 - **Nome**: `k3d-cluster`
 - **Configuração**: 1 server + 2 agents
 - **Portas expostas**: 8080:80, 8443:443
-- **Volume persistente**: `/mnt/e/postgresql:/mnt/host-k8s`
+- **Storage**: local-path StorageClass (automático k3d)
 
 ### PostgreSQL
 
 - **Versão**: 16
 - **Namespace**: default
 - **Service**: `postgres.default.svc.cluster.local:5432`
-- **Dados persistentes**: `/mnt/e/postgresql/data`
+- **Dados persistentes**: PVC automático (gerenciado pelo k3d)
 - **Recursos**: 200m CPU, 256Mi RAM
 
 ### n8n

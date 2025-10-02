@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Restore PVC (Persistent Volume Claims)
-# Restaura dados dos PVCs a partir de /mnt/e/cluster/pvc/backup
+# Restaura dados dos PVCs usando kubectl
 
 set -e
 
 # Configurações
 NAMESPACE="default"
-BACKUP_BASE_DIR="/mnt/e/cluster/pvc/backup"
+BACKUP_BASE_DIR="./backups/pvc"
 
 # Cores para output
 RED='\033[0;31m'

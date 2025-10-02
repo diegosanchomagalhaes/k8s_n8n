@@ -3,9 +3,9 @@
 > 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento Kubernetes completo com k3d, PostgreSQL persistente, n8n automação e sistema de backup profissional. **100% compatível com qualquer cluster Kubernetes de produção**!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![k3d](https://img.shields.io/badge/k3d-v5.6.0-blue)](https://k3d.io/)
+[![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.112.4-orange)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.113.3-orange)](https://n8n.io/)
 [![Backup System](https://img.shields.io/badge/Backup-Automated-green)](./backup/README.md)
 
 ## 📋 Sumário
@@ -87,9 +87,9 @@ k8s_n8n/
 
 | Componente       | Versão   | Função                   | Acesso     |
 | ---------------- | -------- | ------------------------ | ---------- |
-| **k3d**          | 5.6.0    | Cluster Kubernetes local | `kubectl`  |
+| **k3d**          | 5.8.3    | Cluster Kubernetes local | `kubectl`  |
 | **PostgreSQL**   | 16       | Database persistente     | `:30432`   |
-| **n8n**          | 1.112.4  | Automação workflows      | HTTPS      |
+| **n8n**          | 1.113.3  | Automação workflows      | HTTPS      |
 | **Traefik**      | Built-in | Ingress Controller       | HTTP/HTTPS |
 | **cert-manager** | 1.13.1   | Certificados TLS         | -          |
 
@@ -194,7 +194,7 @@ graph TD
 ### **1. 📋 Pré-requisitos**
 
 - Docker
-- k3d v5.6.0+
+- k3d v5.8.3+
 - kubectl
 
 ### **2. 🔐 Credenciais (OBRIGATÓRIO)**

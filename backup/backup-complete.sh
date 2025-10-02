@@ -7,7 +7,7 @@ set -e
 
 # Configurações
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_BASE_DIR="/mnt/e/cluster"
+BACKUP_BASE_DIR="./backups"  # Local backup directory
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_LOGS_DIR="${BACKUP_BASE_DIR}/logs"
 
@@ -67,7 +67,7 @@ CONFIGURAÇÕES:
     Logs: ${BACKUP_LOGS_DIR}
 
 ESTRUTURA DO BACKUP:
-/mnt/e/cluster/
+./backups/
 ├── postgresql/
 │   └── backup/
 │       └── YYYYMMDD_HHMMSS/
@@ -240,7 +240,7 @@ EOF
     
     echo "" >> "$report_file"
     echo "=== ESPAÇO EM DISCO ===" >> "$report_file"
-    df -h /mnt/e/cluster >> "$report_file" 2>/dev/null || echo "Não foi possível verificar espaço em disco" >> "$report_file"
+    df -h ./backups >> "$report_file" 2>/dev/null || echo "Não foi possível verificar espaço em disco" >> "$report_file"
     
     success "Relatório criado: $report_file"
 }
@@ -259,12 +259,12 @@ cleanup_old_logs() {
 check_disk_space() {
     log "Verificando espaço em disco..."
     
-    if ! df /mnt/e/cluster >/dev/null 2>&1; then
-        warning "Não foi possível verificar espaço em disco para /mnt/e/cluster"
+    if ! df ./backups >/dev/null 2>&1; then
+        warning "Não foi possível verificar espaço em disco para ./backups"
         return 0
     fi
     
-    local available_gb=$(df /mnt/e/cluster --output=avail -BG | tail -1 | sed 's/G//')
+    local available_gb=$(df ./backups --output=avail -BG | tail -1 | sed 's/G//')
     
     if [ "$available_gb" -lt 5 ]; then
         warning "Pouco espaço em disco disponível: ${available_gb}GB"

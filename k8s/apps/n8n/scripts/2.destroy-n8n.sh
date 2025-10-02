@@ -18,13 +18,17 @@ kubectl delete -f ./k8s/apps/n8n/n8n-hpa.yaml --ignore-not-found
 echo "======== Removendo Service ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-service.yaml --ignore-not-found
 
-echo "======== Removendo Deployment ========"
+echo "======== Removendo Deployment n8n ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-deployment.yaml --ignore-not-found
 
-echo "======== Removendo PVCs ========"
+echo "======== Redis e PostgreSQL mantidos (shared infrastructure) ========"
+echo "  ℹ️ Redis e PostgreSQL não são removidos pois são recursos compartilhados"
+echo "  📝 Para remover: cd infra/scripts && ./2.destroy-infra.sh"
+
+echo "======== Removendo PVCs n8n ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-pvc.yaml --ignore-not-found
 
-echo "======== Removendo Secret ========"
+echo "======== Removendo Secret n8n ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-secret-db.yaml --ignore-not-found
 
 echo "======== Removendo PVC ========"

@@ -7,7 +7,7 @@ set -e
 
 # Configurações
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_BASE_DIR="/mnt/e/cluster"
+BACKUP_BASE_DIR="./backups"  # Local backup directory
 
 # Cores para output
 RED='\033[0;31m'

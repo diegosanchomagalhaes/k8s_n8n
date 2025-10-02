@@ -1,7 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
+  namespace: postgres
 spec:
   serviceName: postgres
   replicas: 1
@@ -13,25 +19,14 @@ spec:
       labels:
         app: postgres
     spec:
-      initContainers:
-        - name: create-directories
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              echo "Creating database directories structure..."
-              mkdir -p /var/lib/postgresql/data/n8n
-              mkdir -p /var/lib/postgresql/data/backup
-              echo "Directory structure created successfully!"
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
       containers:
         - name: postgres
           image: postgres:16
           ports:
             - containerPort: 5432
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           envFrom:
             - secretRef:
                 name: postgres-admin-secret
@@ -54,6 +49,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
+  namespace: postgres
 spec:
   type: NodePort
   ports:

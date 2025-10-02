@@ -121,9 +121,30 @@ spec:
               value: "--max-old-space-size=1536 --max-http-header-size=16384"
             - name: N8N_METRICS
               value: "true"
-            # Cache configuration for faster loading
-            - name: N8N_CACHE_ENABLED
-              value: "true"
+            # Redis cache configuration (shared infrastructure)
+            # Uses Queue Mode Redis variables (n8n uses same Redis for cache and queue)
+            - name: N8N_CACHE_BACKEND
+              value: "redis"
+            - name: QUEUE_BULL_REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: QUEUE_BULL_REDIS_HOST
+            - name: QUEUE_BULL_REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: QUEUE_BULL_REDIS_PORT
+            - name: QUEUE_BULL_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: QUEUE_BULL_REDIS_PASSWORD
+            - name: QUEUE_BULL_REDIS_DB
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-db-secret
+                  key: QUEUE_BULL_REDIS_DB
             # Database connection pool for better performance
             - name: DB_POSTGRESDB_POOL_SIZE
               value: "10"

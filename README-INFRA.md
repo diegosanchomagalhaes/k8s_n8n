@@ -9,6 +9,7 @@
 - [Scripts de Infraestrutura](#-scripts-de-infraestrutura)
 - [Configuração k3d](#-configuração-k3d)
 - [PostgreSQL](#-postgresql)
+- [Redis](#-redis)
 - [cert-manager](#-cert-manager)
 - [Storage Persistente](#-storage-persistente)
 - [Networking](#-networking)
@@ -21,9 +22,10 @@ A infraestrutura base é composta por:
 
 - **k3d**: Cluster Kubernetes local leve
 - **PostgreSQL**: Banco de dados persistente (StatefulSet)
+- **Redis**: Cache backend para performance de aplicações
 - **Traefik**: Ingress controller (padrão do k3d)
 - **cert-manager**: Gerenciamento de certificados TLS self-signed
-- **Storage persistente**: Volumes montados em SSD NVMe
+- **Storage persistente**: local-path StorageClass (automático k3d)
 
 ## 🧩 Componentes
 
@@ -34,21 +36,37 @@ A infraestrutura base é composta por:
 - **Portas expostas**:
   - `8080:80` (HTTP)
   - `8443:443` (HTTPS)
-- **Volume persistente**: `/mnt/e/postgresql:/mnt/host-k8s`
+- **Storage**: local-path (padrão k3d - automático)
 
 ### 🐘 PostgreSQL
 
 - **Versão**: PostgreSQL 16
-- **Namespace**: `default`
-- **Service**: `postgres.default.svc.cluster.local:5432`
-- **Tipo**: StatefulSet com PersistentVolume
-- **Dados**: `/mnt/e/postgresql/data`
+- **Namespace**: `postgres`
+- **Service**: `postgres.postgres.svc.cluster.local:5432`
+- **Tipo**: StatefulSet com PersistentVolumeClaim
+- **Storage**: local-path StorageClass (automático k3d)
 - **Recursos**:
   - CPU: 100m (request) / 500m (limit)
   - Memória: 256Mi (request) / 1Gi (limit)
 
-### 🔐 cert-manager
+### � Redis
 
+- **Versão**: Redis 8.2.1
+- **Namespace**: `redis`
+- **Service**: `redis.redis.svc.cluster.local:6379`
+- **Tipo**: Deployment com PersistentVolumeClaim
+- **Função**: Cache backend para n8n (performance)
+- **Storage**: local-path StorageClass (5Gi)
+- **Autenticação**: Password protegido via Secret
+- **Configuração n8n**:
+  - `N8N_CACHE_BACKEND`: "redis"
+  - `QUEUE_BULL_REDIS_HOST`: redis.redis.svc.cluster.local
+  - `QUEUE_BULL_REDIS_PORT`: 6379
+  - `QUEUE_BULL_REDIS_DB`: 0
+
+### �🔐 cert-manager
+
+- **Versão**: v1.18.2
 - **Namespace**: `cert-manager`
 - **Issuer**: `k3d-selfsigned` (ClusterIssuer)
 - **Função**: Geração automática de certificados TLS para desenvolvimento
@@ -108,11 +126,7 @@ ports:
   - port: 8443:443
     nodeFilters:
       - loadbalancer
-volumes:
-  - volume: /mnt/e/postgresql:/mnt/host-k8s
-    nodeFilters:
-      - server:0
-      - agent:*
+# volumes não necessários - usando local-path StorageClass
 options:
   k3d:
     wait: true
@@ -174,10 +188,14 @@ spec:
 
 ### Storage Persistente
 
-- **Tipo**: hostPath (desenvolvimento)
-- **Localização Host**: `/mnt/e/postgresql/data`
+- **Tipo**: local-path StorageClass (padrão k3d)
+- **Gerenciamento**: Automático pelo Kubernetes
 - **Localização Container**: `/var/lib/postgresql/data`
-- **Tamanho**: 10Gi (configurável)
+- **Tamanho**: 20Gi (PVC automático)
+- **Componentes com PVC**:
+  - PostgreSQL: 20Gi (dados do banco)
+  - Redis: 5Gi (cache persistente)
+  - n8n: 10Gi (workflows e arquivos)
 
 ### Credenciais
 
@@ -264,7 +282,8 @@ kubectl exec statefulset/postgres -- pg_dump -U postgres postgres > backup.sql
 kubectl exec -i statefulset/postgres -- psql -U postgres postgres < backup.sql
 
 # Backup de dados (filesystem)
-sudo cp -r /mnt/e/postgresql/data /backup/postgresql-$(date +%Y%m%d)
+# Backup do PostgreSQL (usando kubectl)
+kubectl exec postgres-0 -n postgres -- pg_dumpall -U postgres > backup-$(date +%Y%m%d).sql
 ```
 
 ## 🌐 Networking
@@ -375,8 +394,9 @@ kubectl describe pod postgres-0
 kubectl logs postgres-0
 
 # Verificar volume
-ls -la /mnt/e/postgresql/data/
-sudo chown -R 999:999 /mnt/e/postgresql/data/
+# Verificar status do PVC
+kubectl get pvc -n postgres
+kubectl describe pvc postgres-pvc -n postgres
 ```
 
 #### Conexão recusada
@@ -416,10 +436,10 @@ kubectl describe certificate -n namespace nome-cert
 # Verificar PV/PVC
 kubectl get pv,pvc
 
-# Verificar permissões
-ls -la /mnt/e/postgresql/
-sudo mkdir -p /mnt/e/postgresql/data
-sudo chown -R 999:999 /mnt/e/postgresql/
+# Verificar PVC e storage
+kubectl get pvc -n postgres
+kubectl describe pvc postgres-pvc -n postgres
+kubectl get storageclass
 ```
 
 #### Performance lenta
