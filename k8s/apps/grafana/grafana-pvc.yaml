@@ -1,0 +1,34 @@
+# Grafana PVC - Persistent Volume Claims
+# Armazenamento para dados e configurações do Grafana
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: grafana
+  labels:
+    app: grafana
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path # k3d default storage class
+  resources:
+    requests:
+      storage: 10Gi
+---
+# PVC adicional para dados de dashboard e plugins
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data-pvc
+  namespace: grafana
+  labels:
+    app: grafana
+    component: data-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path # k3d default storage class
+  resources:
+    requests:
+      storage: 5Gi

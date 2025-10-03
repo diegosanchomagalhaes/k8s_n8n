@@ -1,0 +1,131 @@
+# Grafana Deployment
+# Deployment principal do Grafana com PostgreSQL e configurações de segurança
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grafana
+  labels:
+    app: grafana
+    component: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: monitoring
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+      containers:
+        - name: grafana
+          image: grafana/grafana:12.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: grafana
+              protocol: TCP
+
+          # Environment variables from Secret
+          envFrom:
+            - secretRef:
+                name: grafana-db-secret
+
+          env:
+            # Server configuration
+            - name: GF_SERVER_ROOT_URL
+              value: "https://grafana.local.127.0.0.1.nip.io:8443"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "false"
+
+            # Database configuration
+            - name: GF_DATABASE_SSL_MODE
+              value: "disable"
+            - name: GF_DATABASE_MAX_OPEN_CONN
+              value: "300"
+            - name: GF_DATABASE_MAX_IDLE_CONN
+              value: "3"
+
+            # Security
+            - name: GF_SECURITY_DISABLE_GRAVATAR
+              value: "true"
+            - name: GF_SECURITY_COOKIE_SECURE
+              value: "true"
+            - name: GF_SECURITY_COOKIE_SAMESITE
+              value: "lax"
+
+            # Auth
+            - name: GF_AUTH_DISABLE_LOGIN_FORM
+              value: "false"
+            - name: GF_AUTH_DISABLE_SIGNOUT_MENU
+              value: "false"
+
+            # Paths
+            - name: GF_PATHS_DATA
+              value: "/var/lib/grafana"
+            - name: GF_PATHS_LOGS
+              value: "/var/log/grafana"
+            - name: GF_PATHS_PLUGINS
+              value: "/var/lib/grafana/plugins"
+
+            # Analytics
+            - name: GF_ANALYTICS_REPORTING_ENABLED
+              value: "false"
+            - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+              value: "false"
+
+            # Install plugins
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel"
+
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: grafana-data
+              mountPath: /var/lib/grafana/data
+
+          # Probes
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            periodSeconds: 5
+            failureThreshold: 3
+
+          # Resources
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+      volumes:
+        - name: grafana-storage
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-data-pvc
+
+      # Restart policy
+      restartPolicy: Always

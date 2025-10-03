@@ -1,0 +1,24 @@
+# Grafana Ingress
+# Configuração de ingress clonada do n8n (que funciona)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - grafana.local.127.0.0.1.nip.io
+      secretName: grafana-tls
+  rules:
+    - host: grafana.local.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000

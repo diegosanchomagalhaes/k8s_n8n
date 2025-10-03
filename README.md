@@ -15,17 +15,19 @@
 - ✅ **PostgreSQL 16**: Persistente com backup/restore
 - ✅ **Redis 8.2.1**: Cache para n8n com persistência
 - ✅ **n8n 1.113.3**: HTTPS via cert-manager + TLS automático + Redis cache
+- ✅ **Grafana 12.2**: Monitoramento com PostgreSQL + HTTPS + auto-scaling
 - ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
 - ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
 - ✅ **Namespaces Organizados**: Separação adequada de recursos
 
 ## 🌐 **Pontos de Acesso**
 
-| Serviço        | URL                                       | Porta | Tipo      |
-| -------------- | ----------------------------------------- | ----- | --------- |
-| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
-| **PostgreSQL** | `localhost:30432`                         | 30432 | NodePort  |
-| **Redis**      | `redis.redis.svc.cluster.local:6379`        | 6379  | ClusterIP |
+| Serviço        | URL                                           | Porta | Tipo      |
+| -------------- | --------------------------------------------- | ----- | --------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443`     | 8443  | HTTPS/TLS |
+| **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
+| **PostgreSQL** | `localhost:30432`                             | 30432 | NodePort  |
+| **Redis**      | `redis.redis.svc.cluster.local:6379`          | 6379  | ClusterIP |
 
 > ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
@@ -368,6 +370,7 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 | **[README.md](README.md)**                   | Overview geral    | Instalação, SSH, início rápido, visão geral        |
 | **[README-INFRA.md](README-INFRA.md)**       | Infraestrutura    | k3d, PostgreSQL, cert-manager, storage, networking |
 | **[README-N8N.md](README-N8N.md)**           | Aplicação n8n     | Deploy, configuração, scaling, troubleshooting     |
+| **[README-GRAFANA.md](README-GRAFANA.md)**   | Aplicação Grafana | Deploy, dashboards, monitoramento, observabilidade |
 | **[README-WSL2.md](README-WSL2.md)**         | Configuração WSL2 | Otimização, performance, troubleshooting WSL2      |
 | **[README-SECURITY.md](README-SECURITY.md)** | Segurança         | Templates, credenciais, boas práticas              |
 
@@ -376,9 +379,10 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 - **🆕 Primeiro uso?** → Comece com este **README.md**
 - **🏗️ Problemas de infraestrutura?** → Consulte **[README-INFRA.md](README-INFRA.md)**
 - **🔧 Questões específicas do n8n?** → Veja **[README-N8N.md](README-N8N.md)**
-- **� Configuração WSL2?** → Consulte **[README-WSL2.md](README-WSL2.md)**
+- **📊 Monitoramento e Grafana?** → Veja **[README-GRAFANA.md](README-GRAFANA.md)**
+- **💻 Configuração WSL2?** → Consulte **[README-WSL2.md](README-WSL2.md)**
 - **🔐 Segurança e credenciais?** → Veja **[README-SECURITY.md](README-SECURITY.md)**
-- **�📈 Expandindo para novas aplicações?** → Use os documentos como template
+- **📈 Expandindo para novas aplicações?** → Use os documentos como template
 
 ### **💡 Benefícios da Estrutura Modular**
 
@@ -391,11 +395,12 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 
 ### **📦 Aplicações Implementadas**
 
-| 🛠️ **Aplicação** | 📝 **Descrição**       | 🌐 **Acesso**                                       | 📖 **Documentação**                    |
-| ---------------- | ---------------------- | --------------------------------------------------- | -------------------------------------- |
-| **n8n**          | Automação de workflows | https://n8n.local.127.0.0.1.nip.io:8443             | **[README-N8N.md](README-N8N.md)**     |
-| **Redis**        | Cache & Session Store  | Interno (`redis.n8n.svc.cluster.local:6379`)        | Cache para n8n performance             |
-| **PostgreSQL**   | Banco de dados         | Interno (`postgres.default.svc.cluster.local:5432`) | **[README-INFRA.md](README-INFRA.md)** |
+| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | 📖 **Documentação**                        |
+| ---------------- | -------------------------- | ---------------------------------------------------- | ------------------------------------------ |
+| **n8n**          | Automação de workflows     | https://n8n.local.127.0.0.1.nip.io:8443              | **[README-N8N.md](README-N8N.md)**         |
+| **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | **[README-GRAFANA.md](README-GRAFANA.md)** |
+| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | Cache para n8n performance                 |
+| **PostgreSQL**   | Banco de dados             | Interno (`postgres.postgres.svc.cluster.local:5432`) | **[README-INFRA.md](README-INFRA.md)**     |
 
 ### **🔄 Adicionando Novas Aplicações**
 

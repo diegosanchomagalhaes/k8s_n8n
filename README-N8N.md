@@ -218,11 +218,30 @@ kubectl get certificate -n n8n
 - **HTTPS (Recomendado)**: https://n8n.local.127.0.0.1.nip.io:8443
 - **Port-forward (Desenvolvimento)**: http://localhost:9090
 
-### Configuração de Hosts
+### 🔧 Configuração de HOSTS
+
+> ⚠️ **IMPORTANTE**: O domínio `n8n.local.127.0.0.1.nip.io` é automaticamente adicionado ao `/etc/hosts` durante o deploy.
+
+**Configuração Manual (se necessário):**
 
 ```bash
-# Adicionar ao /etc/hosts (se necessário)
-echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
+# Adicionar ao /etc/hosts (Linux/WSL2)
+echo "127.0.0.1 n8n.local.127.0.0.1.nip.io" | sudo tee -a /etc/hosts
+
+# Verificar se foi adicionado
+grep "n8n.local" /etc/hosts
+```
+
+**Para WSL2:**
+
+- O script de deploy já configura automaticamente o `/etc/hosts`
+- Acesse via Windows: `https://n8n.local.127.0.0.1.nip.io:8443`
+- **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
+
+**Remover entrada (se necessário):**
+
+```bash
+sudo sed -i "/n8n.local.127.0.0.1.nip.io/d" /etc/hosts
 ```
 
 ### Port Forward (Alternativo)
