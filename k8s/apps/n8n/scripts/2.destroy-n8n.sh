@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Script para remoção da aplicação n8n
+# MANTÉM: Base de dados PostgreSQL, Redis e dados PVC em hostPath
+
+echo "🗑️ Removendo aplicação n8n (mantendo dados persistentes)..."
+
 # Ir para o diretório raiz do projeto
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
@@ -25,16 +30,26 @@ echo "======== Redis e PostgreSQL mantidos (shared infrastructure) ========"
 echo "  ℹ️ Redis e PostgreSQL não são removidos pois são recursos compartilhados"
 echo "  📝 Para remover: cd infra/scripts && ./2.destroy-infra.sh"
 
-echo "======== Removendo PVCs n8n ========"
-kubectl delete -f ./k8s/apps/n8n/n8n-pvc.yaml --ignore-not-found
-
 echo "======== Removendo Secret n8n ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-secret-db.yaml --ignore-not-found
 
-echo "======== Removendo PVC ========"
-kubectl delete -f ./k8s/apps/n8n/n8n-pvc.yaml --ignore-not-found
+echo "======== MANTENDO PVCs n8n (dados persistentes) ========"
+echo "  💾 PVCs mantidos para preservar dados em hostPath"
+echo "  📁 Dados em: /home/dsm/cluster/pvc/n8n"
 
 echo "======== Removendo Namespace ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-namespace.yaml --ignore-not-found
 
-echo "======== n8n removido ========"
+echo ""
+echo "🎉 Aplicação n8n removida!"
+echo "💾 DADOS PRESERVADOS:"
+echo "   📁 Base de dados n8n no PostgreSQL"
+echo "   📁 PVCs em: /home/dsm/cluster/pvc/n8n"
+echo "   🔴 Redis (compartilhado) mantido"
+echo ""
+echo "💡 Para recriar a aplicação:"
+echo "   ./k8s/apps/n8n/scripts/3.start-n8n.sh"
+echo ""
+echo "🗑️ Para limpeza COMPLETA da base de dados:"
+echo "   ./k8s/apps/n8n/scripts/4.drop-database-n8n.sh"
+echo ""

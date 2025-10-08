@@ -1,9 +1,10 @@
 #!/bin/bash
 set -e
 
-# Script para destruir completamente o Grafana
+# Script para remoção da aplicação Grafana
+# MANTÉM: Base de dados PostgreSQL, Redis e dados PVC em hostPath
 
-echo "🗑️ Destruindo Grafana..."
+echo "🗑️ Removendo aplicação Grafana (mantendo dados persistentes)..."
 
 # Ir para o diretório raiz do projeto
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
@@ -25,9 +26,12 @@ kubectl delete -f ./k8s/apps/grafana/grafana-deployment.yaml --ignore-not-found
 echo "======== [5/8] Removendo Service ========"
 kubectl delete -f ./k8s/apps/grafana/grafana-service.yaml --ignore-not-found
 
-echo "======== [6/8] Removendo PVCs e Secrets ========"
-kubectl delete -f ./k8s/apps/grafana/grafana-pvc.yaml --ignore-not-found
+echo "======== [6/8] Removendo Secrets ========"
 kubectl delete -f ./k8s/apps/grafana/grafana-secret-db.yaml --ignore-not-found
+
+echo "======== MANTENDO PVCs Grafana (dados persistentes) ========"
+echo "  💾 PVCs mantidos para preservar dados em hostPath"
+echo "  📁 Dados em: /home/dsm/cluster/pvc/grafana"
 
 echo "======== [7/8] Removendo Namespace (e todos os recursos) ========"
 kubectl delete namespace grafana --ignore-not-found
@@ -40,7 +44,15 @@ if grep -q "$GRAFANA_DOMAIN" /etc/hosts; then
 fi
 
 echo ""
-echo "🎉 Grafana removido completamente!"
-echo "📝 Nota: O database 'grafana' no PostgreSQL não foi removido"
-echo "   Para remover: kubectl exec -n postgres postgres-0 -- psql -U postgres -c 'DROP DATABASE grafana;'"
-echo "   Para remover usuário: kubectl exec -n postgres postgres-0 -- psql -U postgres -c 'DROP USER grafana;'"
+echo "🎉 Aplicação Grafana removida!"
+echo "� DADOS PRESERVADOS:"
+echo "   📁 Base de dados grafana no PostgreSQL"
+echo "   📁 PVCs em: /home/dsm/cluster/pvc/grafana"
+echo "   🔴 Redis (compartilhado) mantido"
+echo ""
+echo "💡 Para recriar a aplicação:"
+echo "   ./k8s/apps/grafana/scripts/3.start-grafana.sh"
+echo ""
+echo "🗑️ Para limpeza COMPLETA da base de dados:"
+echo "   ./k8s/apps/grafana/scripts/4.drop-database-grafana.sh"
+echo ""

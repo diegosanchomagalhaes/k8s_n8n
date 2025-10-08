@@ -22,7 +22,7 @@ cd "$PROJECT_ROOT"
 SPECIFIC_APP="$1"
 
 # Lista de aplicações disponíveis
-AVAILABLE_APPS=("n8n")  # Adicione aqui: grafana, prometheus, etc.
+AVAILABLE_APPS=("n8n" "grafana")
 
 # =================================================================
 # FUNÇÃO: INICIAR UMA APLICAÇÃO
@@ -51,7 +51,7 @@ start_single_app() {
 # 1. INICIAR INFRAESTRUTURA
 # =================================================================
 echo "🏗️ Passo 1: Infraestrutura base..."
-"$PROJECT_ROOT/infra/scripts/9.start-infra.sh"
+"$PROJECT_ROOT/infra/scripts/10.start-infra.sh"
 
 if [ $? -ne 0 ]; then
     echo "❌ Falha na inicialização da infraestrutura"
@@ -66,9 +66,15 @@ echo ""
 # 2. INICIAR APLICAÇÕES
 # =================================================================
 if [ -n "$SPECIFIC_APP" ]; then
-    # Iniciar aplicação específica
-    echo "📱 Passo 2: Aplicação específica ($SPECIFIC_APP)..."
-    start_single_app "$SPECIFIC_APP"
+    # Verificar se a aplicação específica existe na lista
+    if [[ " ${AVAILABLE_APPS[@]} " =~ " ${SPECIFIC_APP} " ]]; then
+        echo "📱 Passo 2: Aplicação específica ($SPECIFIC_APP)..."
+        start_single_app "$SPECIFIC_APP"
+    else
+        echo "❌ Aplicação '$SPECIFIC_APP' não encontrada!"
+        echo "📋 Aplicações disponíveis: ${AVAILABLE_APPS[*]}"
+        exit 1
+    fi
 else
     # Iniciar todas as aplicações disponíveis
     echo "📱 Passo 2: Todas as aplicações..."
@@ -86,6 +92,7 @@ echo ""
 echo "📋 Componentes da infraestrutura:"
 echo "   ✅ k3d cluster"
 echo "   ✅ PostgreSQL"
+echo "   ✅ Redis"
 echo "   ✅ cert-manager"
 echo ""
 echo "📱 Aplicações ativas:"
@@ -112,5 +119,5 @@ done
 echo ""
 echo "💡 Para iniciar aplicações específicas:"
 echo "   ./start-all.sh n8n      # Somente n8n"
-echo "   ./start-all.sh grafana  # Somente grafana (futuro)"
+echo "   ./start-all.sh grafana  # Somente grafana"
 echo ""

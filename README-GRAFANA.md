@@ -18,11 +18,11 @@
 
 ## 🌐 **Acesso**
 
-| Serviço      | URL                                           | Porta | Credenciais                             | Status |
-| ------------ | --------------------------------------------- | ----- | --------------------------------------- | ------ |
-| **Grafana**  | `https://grafana.local.127.0.0.1.nip.io:8443` | 8443  | admin / Admin_Grafana_2025_K8s_10243769 | ✅     |
-| **Database** | `postgres.postgres.svc.cluster.local:5432`    | 5432  | postgres / postgres_admin               | ✅     |
-| **Internal** | `grafana.grafana.svc.cluster.local:3000`      | 3000  | (cluster interno)                       | ✅     |
+| Serviço      | URL                                           | Porta | Credenciais                            | Status |
+| ------------ | --------------------------------------------- | ----- | -------------------------------------- | ------ |
+| **Grafana**  | `https://grafana.local.127.0.0.1.nip.io:8443` | 8443  | admin / admin (altere na primeira vez) | ✅     |
+| **Database** | `postgres.postgres.svc.cluster.local:5432`    | 5432  | (credenciais configuradas via secret)  | ✅     |
+| **Internal** | `grafana.grafana.svc.cluster.local:3000`      | 3000  | (acesso interno do cluster)            | ✅     |
 
 > ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
@@ -41,11 +41,13 @@
 ### **⚡ Setup Completo em 2 Comandos**
 
 ```bash
-# 1. Deploy da infraestrutura base (se não estiver rodando)
-./infra/scripts/10.start-infra.sh
+# 🎯 OPÇÃO 1: Deploy completo (recomendado)
+./start-all.sh                        # Infra + n8n + grafana
+./start-all.sh grafana                # Infra + somente grafana
 
-# 2. Deploy do Grafana
-./k8s/apps/grafana/scripts/1.deploy-grafana.sh
+# 🎯 OPÇÃO 2: Deploy manual
+./infra/scripts/10.start-infra.sh     # 1. Infraestrutura base
+./k8s/apps/grafana/scripts/3.start-grafana.sh  # 2. Grafana completo
 ```
 
 ### **🌐 Acesso Imediato**

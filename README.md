@@ -6,7 +6,7 @@
 [![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-8.2.1-red)](https://redis.io/)
-[![n8n](https://img.shields.io/badge/n8n-1.113.3-orange)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.114.4-orange)](https://n8n.io/)
 [![cert-manager](https://img.shields.io/badge/cert--manager-v1.18.2-green)](https://cert-manager.io/)
 
 ## 🎯 **Status Atual - Infraestrutura Completa**
@@ -14,7 +14,7 @@
 - ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer
 - ✅ **PostgreSQL 16**: Persistente com backup/restore
 - ✅ **Redis 8.2.1**: Cache para n8n com persistência
-- ✅ **n8n 1.113.3**: HTTPS via cert-manager + TLS automático + Redis cache
+- ✅ **n8n 1.114.4**: HTTPS via cert-manager + TLS automático + Redis cache
 - ✅ **Grafana 12.2**: Monitoramento com PostgreSQL + HTTPS + auto-scaling
 - ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
 - ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
@@ -167,9 +167,13 @@ cp infra/postgres/postgres-secret-admin.yaml.template \
 cp k8s/apps/n8n/n8n-secret-db.yaml.template \
    k8s/apps/n8n/n8n-secret-db.yaml
 
-# 3. Edite os arquivos e substitua YOUR_POSTGRES_ADMIN_PASSWORD_HERE
-nano infra/postgres/postgres-secret-admin.yaml
-nano k8s/apps/n8n/n8n-secret-db.yaml
+cp k8s/apps/grafana/grafana-secret-db.yaml.template \
+   k8s/apps/grafana/grafana-secret-db.yaml
+
+# 3. Edite os arquivos e configure credenciais reais
+nano infra/postgres/postgres-secret-admin.yaml     # PostgreSQL admin
+nano k8s/apps/n8n/n8n-secret-db.yaml              # n8n database config
+nano k8s/apps/grafana/grafana-secret-db.yaml       # Grafana database config
 
 # 4. Execute o ambiente completo
 ./start-all.sh
@@ -395,12 +399,12 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 
 ### **📦 Aplicações Implementadas**
 
-| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | 📖 **Documentação**                        |
-| ---------------- | -------------------------- | ---------------------------------------------------- | ------------------------------------------ |
-| **n8n**          | Automação de workflows     | https://n8n.local.127.0.0.1.nip.io:8443              | **[README-N8N.md](README-N8N.md)**         |
-| **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | **[README-GRAFANA.md](README-GRAFANA.md)** |
-| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | Cache para n8n performance                 |
-| **PostgreSQL**   | Banco de dados             | Interno (`postgres.postgres.svc.cluster.local:5432`) | **[README-INFRA.md](README-INFRA.md)**     |
+| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | � **Login**               | �📖 **Documentação**                       |
+| ---------------- | -------------------------- | ---------------------------------------------------- | ------------------------- | ------------------------------------------ |
+| **n8n**          | Automação de workflows     | https://n8n.local.127.0.0.1.nip.io:8443              | Setup inicial             | **[README-N8N.md](README-N8N.md)**         |
+| **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | admin / admin             | **[README-GRAFANA.md](README-GRAFANA.md)** |
+| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n performance                 |
+| **PostgreSQL**   | Banco de dados             | Interno (`postgres.postgres.svc.cluster.local:5432`) | postgres / postgres_admin | **[README-INFRA.md](README-INFRA.md)**     |
 
 ### **🔄 Adicionando Novas Aplicações**
 
@@ -415,9 +419,11 @@ cp -r k8s/apps/n8n/* k8s/apps/NOVA_APP/
 ### **📋 Roadmap de Aplicações**
 
 - **✅ n8n**: Automação de workflows (implementado)
-- **🔄 Grafana**: Dashboards e monitoring (planejado)
-- **🔄 Redis**: Cache e sessões (planejado)
+- **✅ Grafana**: Dashboards e monitoring (implementado)
+- **✅ Redis**: Cache e sessões (implementado)
+- **✅ PostgreSQL**: Base de dados com persistência hostPath (implementado)
 - **🔄 MinIO**: Object storage S3-compatible (planejado)
+- **🔄 Prometheus**: Métricas detalhadas (planejado)
 
 ## �🔑 **Configuração SSH para GitHub (Opcional)**
 
@@ -570,32 +576,53 @@ k3d-local-development/
 ### **📋 Scripts Disponíveis:**
 
 ```bash
-# 🎯 OPÇÃO 1: Deploy infraestrutura completa
-./infra/scripts/9.start-infra.sh     # k3d + PostgreSQL + cert-manager
+# 🎯 OPÇÃO 1: Deploy completo (infraestrutura + aplicações)
+./start-all.sh                       # Deploy completo: infra + n8n + grafana
+./start-all.sh n8n                   # Deploy infra + somente n8n
+./start-all.sh grafana               # Deploy infra + somente grafana
 
-# 🎯 OPÇÃO 2: Deploy n8n após infraestrutura
-./k8s/apps/n8n/scripts/1.deploy-n8n.sh  # n8n + HTTPS + auto-hosts
+# 🎯 OPÇÃO 2: Deploy manual por componente
+./infra/scripts/10.start-infra.sh               # k3d + PostgreSQL + Redis + cert-manager
+./k8s/apps/n8n/scripts/3.start-n8n.sh          # Deploy n8n (requer infra)
+./k8s/apps/grafana/scripts/3.start-grafana.sh  # Deploy grafana (requer infra)
 
-# 🎯 OPÇÃO 3: Destruir tudo e recomeçar
-./infra/scripts/2.destroy-infra.sh   # Limpeza completa
+# 🎯 OPÇÃO 3: Limpeza e manutenção
+./infra/scripts/2.destroy-infra.sh     # Remove cluster completo (limpa tudo)
+k3d cluster delete k3d-cluster         # Alternativa direta para limpeza
+
+# 🗑️ OPÇÃO 4: Verificação de status
+kubectl get all --all-namespaces       # Ver todos os recursos
+kubectl get pods -n n8n                # Status do n8n
+kubectl get pods -n grafana            # Status do grafana
+kubectl get pods -n postgres           # Status do PostgreSQL
+kubectl get pods -n redis              # Status do Redis
 ```
 
 > ⚠️ **Se aparecer "Permission denied"**: Execute `find . -name "*.sh" -type f -exec chmod +x {} \;` primeiro!
 
 ### **🧠 Processo Automatizado:**
 
-| Script                 | O que faz                               | Tempo |
-| ---------------------- | --------------------------------------- | ----- |
-| **9.start-infra.sh**   | k3d cluster + PostgreSQL + cert-manager | ~2min |
-| **1.deploy-n8n.sh**    | n8n + TLS + auto-config /etc/hosts      | ~1min |
-| **2.destroy-infra.sh** | Limpeza completa (cluster + volumes)    | ~30s  |
+| Script                 | O que faz                                       | Tempo |
+| ---------------------- | ----------------------------------------------- | ----- |
+| **start-all.sh**       | Deploy completo: infra + n8n + grafana          | ~3min |
+| **10.start-infra.sh**  | k3d cluster + PostgreSQL + Redis + cert-manager | ~2min |
+| **3.start-n8n.sh**     | n8n 1.114.4 + TLS + Redis cache + hosts         | ~1min |
+| **3.start-grafana.sh** | Grafana 12.2 + TLS + PostgreSQL + hosts         | ~1min |
+| **2.destroy-infra.sh** | Remove cluster completo + limpeza total         | ~30s  |
 
 ### **💡 Fluxo de Uso Típico:**
 
 ```bash
-# ☀️ Primeira execução ou após reboot
-./infra/scripts/9.start-infra.sh
-./k8s/apps/n8n/scripts/1.deploy-n8n.sh
+# ☀️ Primeira execução (deploy completo)
+./start-all.sh                       # Infraestrutura + n8n + grafana
+
+# 🔄 Deploy aplicação específica
+./start-all.sh n8n                   # Somente n8n
+./start-all.sh grafana               # Somente grafana
+
+# 🛠️ Manutenção (remover aplicação mantendo dados)
+./k8s/apps/n8n/scripts/2.destroy-n8n.sh         # Remove n8n (dados preservados)
+./k8s/apps/grafana/scripts/2.destroy-grafana.sh # Remove grafana (dados preservados)
 
 # 🔄 Reiniciar ambiente (se necessário)
 ./infra/scripts/2.destroy-infra.sh
@@ -794,11 +821,15 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ### **🔧 Scripts Específicos**
 
-| **Categoria**         | **Script**                         | **Função**                                           |
-| --------------------- | ---------------------------------- | ---------------------------------------------------- |
-| **🏗️ Infraestrutura** | `infra/scripts/1.create-infra.sh`  | Setup completo (cluster + PostgreSQL + cert-manager) |
-| **🗑️ Limpeza**        | `infra/scripts/2.destroy-infra.sh` | Destruir tudo                                        |
-| **📱 Aplicações**     | `k8s/scripts/1.deploy-n8n.sh`      | Deploy do n8n                                        |
+| **Categoria**              | **Script**                                    | **Função**                                  |
+| -------------------------- | --------------------------------------------- | ------------------------------------------- |
+| **🚀 Deploy Completo**     | `start-all.sh`                                | Infraestrutura + todas aplicações           |
+| **🏗️ Infraestrutura**      | `infra/scripts/10.start-infra.sh`             | Cluster + PostgreSQL + Redis + cert-manager |
+| **� Aplicação n8n**        | `k8s/apps/n8n/scripts/3.start-n8n.sh`         | Deploy n8n com HTTPS                        |
+| **📊 Aplicação Grafana**   | `k8s/apps/grafana/scripts/3.start-grafana.sh` | Deploy Grafana com HTTPS                    |
+| **🗑️ Limpeza Infra**       | `infra/scripts/2.destroy-infra.sh`            | Remove cluster (mantém dados hostPath)      |
+| **�️ Limpeza Aplicações**  | `k8s/apps/*/scripts/2.destroy-*.sh`           | Remove app (mantém dados)                   |
+| **💥 Limpeza Completa DB** | `k8s/apps/*/scripts/4.drop-database-*.sh`     | Remove PERMANENTEMENTE dados da aplicação   |
 
 > 📚 **Lista completa de scripts**: Consulte **[README-INFRA.md](README-INFRA.md)** para todos os scripts disponíveis e suas funções específicas.
 

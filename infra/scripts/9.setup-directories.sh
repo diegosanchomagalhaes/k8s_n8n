@@ -3,9 +3,9 @@ set -e
 
 echo "📂 Criando nova estrutura de diretórios organizada..."
 
-# Diretório base do cluster
-# CLUSTER_BASE não necessário - usando local-path StorageClass
-# Volumes são gerenciados automaticamente pelo k3d
+# Diretório base do cluster (hostPath para persistência)
+CLUSTER_BASE="/home/dsm/cluster"
+echo "📁 Base de dados: $CLUSTER_BASE"
 
 # Criar estrutura de diretórios
 echo "🗂️ Criando diretórios base..."

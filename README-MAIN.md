@@ -1,11 +1,13 @@
-# 🏗️ K8s n8n - Ambiente Kubernetes Completo
+# 🏗️ K8s Local - Ambiente Kubernetes Completo
 
-> 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento Kubernetes completo com k3d, PostgreSQL persistente, n8n automação e sistema de backup profissional. **100% compatível com qualquer cluster Kubernetes de produção**!
+> 🚀 **Desenvolva Local, Deploy Global**: Ambiente de desenvolvimento Kubernetes completo com k3d, PostgreSQL persistente, n8n automação, Grafana monitoring e sistema de backup profissional. **100% compatível com qualquer cluster Kubernetes de produção**!
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.113.3-orange)](https://n8n.io/)
+[![Redis](https://img.shields.io/badge/Redis-8.2.1-red)](https://redis.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.114.4-orange)](https://n8n.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-12.2-orange)](https://grafana.com/)
 [![Backup System](https://img.shields.io/badge/Backup-Automated-green)](./backup/README.md)
 
 ## 📋 Sumário
@@ -22,43 +24,70 @@
 
 ## 🎯 Início Rápido
 
-### **⚡ Setup Completo em 3 Comandos**
+### **⚡ Setup Completo em 1 Comando**
 
 ```bash
-# 1. Configurar credenciais
+# 🚀 Deploy completo (infraestrutura + aplicações)
+./start-all.sh
+
+# OU deploy aplicações específicas:
+./start-all.sh n8n                    # Infra + n8n
+./start-all.sh grafana                # Infra + grafana
+```
+
+### **⚙️ Configuração de Credenciais (primeira execução)**
+
+```bash
+# 1. Copiar templates de configuração
 cp infra/postgres/postgres-secret-admin.yaml.template \
    infra/postgres/postgres-secret-admin.yaml
-# Edite e defina sua senha PostgreSQL
+cp k8s/apps/n8n/n8n-secret-db.yaml.template \
+   k8s/apps/n8n/n8n-secret-db.yaml
+cp k8s/apps/grafana/grafana-secret-db.yaml.template \
+   k8s/apps/grafana/grafana-secret-db.yaml
 
-# 2. Subir infraestrutura completa
-./infra/scripts/10.start-infra.sh
-
-# 3. Deploy n8n
-./k8s/apps/n8n/scripts/1.deploy-n8n.sh
+# 2. Editar e configurar credenciais reais
+nano infra/postgres/postgres-secret-admin.yaml     # PostgreSQL admin
+nano k8s/apps/n8n/n8n-secret-db.yaml              # n8n database
+nano k8s/apps/grafana/grafana-secret-db.yaml       # Grafana database
 ```
 
 ### **🌐 Acesso Rápido**
 
-- **n8n**: https://n8n.local.127.0.0.1.nip.io
-- **PostgreSQL**: localhost:30432
+- **n8n 1.114.4**: https://n8n.local.127.0.0.1.nip.io:8443 (Configure primeiro usuário)
+- **Grafana 12.2**: https://grafana.local.127.0.0.1.nip.io:8443 (admin/admin)
+- **PostgreSQL 16**: localhost:30432 (credenciais no secret)
+- **Redis 8.2.1**: redis.redis.svc.cluster.local:6379 (cache habilitado para n8n)
 
 ---
 
 ## 📂 Estrutura do Projeto
 
 ```
-k8s_n8n/
+k8s_local/
+├── start-all.sh                # 🚀 Deploy completo (NOVO!)
 ├── infra/                      # 🏗️ Infraestrutura base
 │   ├── scripts/                # Scripts de gerenciamento
 │   │   ├── 9.setup-directories.sh    # Preparar estrutura
-│   │   └── 10.start-infra.sh         # Subir tudo
+│   │   ├── 10.start-infra.sh         # Subir infraestrutura
+│   │   └── 2.destroy-infra.sh        # Limpeza (mantém dados)
 │   ├── k3d/                    # Configuração do cluster
 │   ├── postgres/               # PostgreSQL persistente
+│   ├── redis/                  # Redis cache (NOVO!)
 │   └── cert-manager/           # Certificados TLS
 ├── k8s/                        # 🚀 Aplicações Kubernetes
 │   └── apps/
-│       └── n8n/                # Automação n8n
-│           ├── scripts/        # Deploy automático
+│       ├── n8n/                # Automação n8n
+│       │   ├── scripts/        # Deploy e manutenção
+│       │   │   ├── 3.start-n8n.sh         # Deploy aplicação
+│       │   │   ├── 2.destroy-n8n.sh       # Remove app (mantém dados)
+│       │   │   └── 4.drop-database-n8n.sh # Limpeza COMPLETA (NOVO!)
+│       │   └── *.yaml         # Manifests K8s
+│       └── grafana/            # Monitoramento Grafana (NOVO!)
+│           ├── scripts/        # Deploy e manutenção
+│           │   ├── 3.start-grafana.sh         # Deploy aplicação
+│           │   ├── 2.destroy-grafana.sh       # Remove app (mantém dados)
+│           │   └── 4.drop-database-grafana.sh # Limpeza COMPLETA (NOVO!)
 │           └── *.yaml         # Manifests K8s
 ├── backup/                     # 🗄️ Sistema de Backup
 │   ├── scripts/               # Scripts de backup/restore
@@ -67,17 +96,18 @@ k8s_n8n/
 └── README*.md                 # 📚 Documentação modular
 ```
 
-### **🎯 Estrutura de Dados Organizada**
+### **🎯 Estrutura de Dados Organizada (hostPath)**
 
 ```
-/mnt/e/cluster/                 # 📂 Base organizada
+/home/dsm/cluster/              # 📂 Base organizada (hostPath persistente)
 ├── postgresql/                 # 🗄️ Dados PostgreSQL
-│   ├── n8n/                  # Database específico do n8n
-│   ├── [outras-apps]/        # Futuras aplicações
+│   ├── data/                  # Dados principais PostgreSQL
 │   └── backup/               # Backups de databases
-├── pvc/                       # 📁 Volumes persistentes
+├── redis/                     # 🔴 Dados Redis (NOVO!)
+│   └── data/                 # Cache e sessões
+├── pvc/                       # 📁 Volumes persistentes das aplicações
 │   ├── n8n/                 # Arquivos do n8n
-│   ├── [outras-apps]/       # Futuras aplicações
+│   ├── grafana/              # Dados Grafana (NOVO!)
 │   └── backup/              # Backups de volumes
 ```
 
@@ -85,13 +115,15 @@ k8s_n8n/
 
 ### **🔧 Componentes Principais**
 
-| Componente       | Versão   | Função                   | Acesso     |
-| ---------------- | -------- | ------------------------ | ---------- |
-| **k3d**          | 5.8.3    | Cluster Kubernetes local | `kubectl`  |
-| **PostgreSQL**   | 16       | Database persistente     | `:30432`   |
-| **n8n**          | 1.113.3  | Automação workflows      | HTTPS      |
-| **Traefik**      | Built-in | Ingress Controller       | HTTP/HTTPS |
-| **cert-manager** | 1.13.1   | Certificados TLS         | -          |
+| Componente       | Versão   | Função                   | Acesso            |
+| ---------------- | -------- | ------------------------ | ----------------- |
+| **k3d**          | 5.8.3    | Cluster Kubernetes local | `kubectl`         |
+| **PostgreSQL**   | 16       | Database persistente     | `localhost:30432` |
+| **Redis**        | 8.2.1    | Cache e sessões          | Interno (cluster) |
+| **n8n**          | 1.114.4  | Automação workflows      | HTTPS `:8443`     |
+| **Grafana**      | 12.2     | Dashboards e monitoring  | HTTPS `:8443`     |
+| **Traefik**      | Built-in | Ingress Controller       | HTTP/HTTPS        |
+| **cert-manager** | 1.18.2   | Certificados TLS         | Automático        |
 
 ### **🌐 Rede e Acesso**
 

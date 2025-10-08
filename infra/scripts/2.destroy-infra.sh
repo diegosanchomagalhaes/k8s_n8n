@@ -2,9 +2,9 @@
 
 # Script de destruição da infraestrutura base
 # Destroi: cluster k3d, PostgreSQL, cert-manager
-# Isso automaticamente remove todos os PVCs e bases de dados
+# MANTÉM: Dados persistentes em hostPath (PostgreSQL, Redis, PVCs)
 
-echo "🗑️ Destruindo infraestrutura base..."
+echo "🗑️ Destruindo infraestrutura base (mantendo dados persistentes)..."
 
 # Detectar diretório do projeto automaticamente
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
@@ -26,8 +26,17 @@ echo "🗑️  Removendo cert-manager..."
 kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml --ignore-not-found
 
 echo "======== [3/3] Removendo cluster k3d ========"
-# Isso remove automaticamente todos os PVCs e dados
+# Remove o cluster mas dados hostPath são preservados
 k3d cluster delete k3d-cluster
 
-echo "🎉 Infraestrutura base removida completamente!"
-echo "📝 Todos os PVCs e dados foram removidos junto com o cluster"
+echo ""
+echo "🎉 Infraestrutura base removida!"
+echo "💾 DADOS PRESERVADOS em:"
+echo "   📁 /home/dsm/cluster/postgresql (dados PostgreSQL)"
+echo "   � /home/dsm/cluster/redis (dados Redis)" 
+echo "   📁 /home/dsm/cluster/pvc/n8n (dados n8n)"
+echo "   📁 /home/dsm/cluster/pvc/grafana (dados Grafana)"
+echo ""
+echo "💡 Para iniciar novamente:"
+echo "   ./infra/scripts/10.start-infra.sh"
+echo ""

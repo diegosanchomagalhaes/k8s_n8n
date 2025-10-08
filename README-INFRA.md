@@ -81,29 +81,35 @@ A infraestrutura base é composta por:
 
 ### Scripts Principais (`infra/scripts/`)
 
-| Script                     | Descrição                    | Componentes                     |
-| -------------------------- | ---------------------------- | ------------------------------- |
-| `1.create-infra.sh`        | **Setup completo**           | k3d + PostgreSQL + cert-manager |
-| `2.destroy-infra.sh`       | **Destruir tudo**            | Remove cluster e dados          |
-| `3.create-cluster.sh`      | Criar apenas cluster         | k3d cluster                     |
-| `4.delete-cluster.sh`      | Deletar cluster              | Remove k3d                      |
-| `5.create-postgres.sh`     | PostgreSQL apenas            | StatefulSet + PV                |
-| `6.delete-postgres.sh`     | Remover PostgreSQL           | Cleanup DB                      |
-| `7.create-cert-manager.sh` | cert-manager apenas          | TLS management                  |
-| `8.delete-cert-manager.sh` | Remover cert-manager         | Remove certificates             |
-| `9.start-n8n.sh`           | **Inicialização automática** | Detecta e executa necessário    |
+| Script                     | Descrição                     | Componentes                             |
+| -------------------------- | ----------------------------- | --------------------------------------- |
+| `10.start-infra.sh`        | **Setup completo automático** | k3d + PostgreSQL + Redis + cert-manager |
+| `2.destroy-infra.sh`       | **Destruir tudo**             | Remove cluster completo                 |
+| `3.create-cluster.sh`      | Criar apenas cluster          | k3d cluster                             |
+| `4.delete-cluster.sh`      | Deletar cluster               | Remove k3d                              |
+| `5.create-postgres.sh`     | PostgreSQL apenas             | StatefulSet + PV + Secret               |
+| `6.delete-postgres.sh`     | Remover PostgreSQL            | Cleanup DB                              |
+| `7.create-cert-manager.sh` | cert-manager apenas           | TLS management                          |
+| `8.delete-cert-manager.sh` | Remover cert-manager          | Remove certificates                     |
+| `9.setup-directories.sh`   | **Estrutura de diretórios**   | Organiza hostPath storage               |
+| `11.create-redis.sh`       | Redis cache                   | Deployment + PV + Secret                |
+| `12.delete-redis.sh`       | Remover Redis                 | Cleanup cache                           |
 
 ### Uso dos Scripts
 
 ```bash
-# Setup completo (primeira vez)
-./infra/scripts/1.create-infra.sh
+# 🎯 Setup completo (recomendado)
+./start-all.sh                        # Infra + aplicações completas
+./infra/scripts/10.start-infra.sh     # Somente infraestrutura
 
-# Uso diário (detecta automaticamente o que fazer)
-./infra/scripts/9.start-n8n.sh
+# 🗑️ Limpeza completa
+./infra/scripts/2.destroy-infra.sh    # Remove cluster + limpeza total
 
-# Limpeza completa
-./infra/scripts/2.destroy-infra.sh
+# 🔧 Componentes individuais
+./infra/scripts/3.create-cluster.sh   # Somente k3d
+./infra/scripts/5.create-postgres.sh  # Somente PostgreSQL
+./infra/scripts/11.create-redis.sh    # Somente Redis
+./infra/scripts/7.create-cert-manager.sh  # Somente cert-manager
 ```
 
 ## ⚙️ Configuração k3d

@@ -20,7 +20,7 @@
 
 ### Características do Deploy
 
-- **Versão**: n8n 1.113.3
+- **Versão**: n8n 1.114.4
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
 - **Cache**: Redis 8.2.1 (performance otimizada)
@@ -33,21 +33,19 @@
 ### Componentes n8n
 
 ```
-n8n/
+k8s/apps/n8n/
 ├── n8n-namespace.yaml          # Namespace dedicado
-├── n8n-secret-db.yaml          # Credenciais banco (não commitado)
+├── n8n-secret-db.yaml          # Credenciais completas (DB + Redis)
 ├── n8n-secret-db.yaml.template # Template seguro
-├── n8n-deployment.yaml         # Deployment principal
+├── n8n-deployment.yaml         # Deployment n8n 1.114.4
 ├── n8n-service.yaml           # Service ClusterIP
-├── n8n-hpa.yaml               # Auto-scaling
-├── n8n-certificate.yaml       # Certificado TLS
+├── n8n-hpa.yaml               # Auto-scaling (CPU + Memória)
+├── n8n-certificate.yaml       # Certificado TLS automático
 ├── n8n-ingress.yaml           # Ingress HTTPS
-├── redis-deployment.yaml       # Redis cache
-├── redis-service.yaml          # Service Redis
-├── redis-pvc.yaml              # Storage Redis
-├── redis-secret.yaml.template  # Credenciais Redis
+├── n8n-pvc.yaml               # Persistent Volume Claims
 └── scripts/
-    ├── 1.deploy-n8n.sh        # Deploy n8n + Redis integrado
+    ├── 1.deploy-n8n.sh        # Deploy completo n8n
+    └── 3.start-n8n.sh         # Script de inicialização
     ├── 2.destroy-n8n.sh       # Remove n8n + Redis
     ├── 3.start-n8n.sh         # Start/restart com verificação Redis
     └── ...

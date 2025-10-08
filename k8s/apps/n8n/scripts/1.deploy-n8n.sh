@@ -9,13 +9,13 @@ cd "$PROJECT_ROOT"
 echo "======== [1/8] Criando namespace do n8n ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-namespace.yaml
 
-echo "======== [2/7] Criando Secret de conexão com o banco ========"
+echo "======== [2/8] Criando Secret de conexão com o banco ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-secret-db.yaml
 
-echo "======== [3/7] Criando PVCs n8n (Persistent Volume Claims) ========"
+echo "======== [3/8] Criando PVCs n8n (Persistent Volume Claims) ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-pvc.yaml
 
-echo "======== [4/7] Verificando dependências (PostgreSQL + Redis) ========"
+echo "======== [4/8] Verificando dependências (PostgreSQL + Redis) ========"
 echo "  → Verificando PostgreSQL..."
 if ! kubectl get pods -n postgres -l app=postgres 2>/dev/null | grep -q "Running"; then
     echo "❌ PostgreSQL não está rodando no namespace 'postgres'"
@@ -32,28 +32,23 @@ if ! kubectl get pods -n redis -l app=redis 2>/dev/null | grep -q "Running"; the
 fi
 echo "  ✅ Redis OK"
 
-echo "======== [6/9] Criando Deployment n8n ========"
-kubectl apply -f ./k8s/apps/n8n/n8n-deployment.yaml
-
-echo "======== [7/9] Criando Service n8n ========"
-kubectl apply -f ./k8s/apps/n8n/n8n-service.yaml
-
-echo "======== [8/9] Criando HPA (Horizontal Pod Autoscaler) ========"
-kubectl apply -f ./k8s/apps/n8n/n8n-hpa.yaml
-
-echo "======== [5/7] Criando TLS Certificate ========"
+echo "======== [5/8] Criando TLS Certificate ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-certificate.yaml
 
-echo "======== [6/7] Deployando n8n (Service + HPA + Deployment + Ingress) ========"
-kubectl apply -f ./k8s/apps/n8n/n8n-service.yaml
-kubectl apply -f ./k8s/apps/n8n/n8n-hpa.yaml
+echo "======== [6/8] Criando Deployment n8n ========"
 kubectl apply -f ./k8s/apps/n8n/n8n-deployment.yaml
+
+echo "======== [7/8] Criando Service n8n ========"
+kubectl apply -f ./k8s/apps/n8n/n8n-service.yaml
+
+echo "======== [8/8] Criando HPA e Ingress ========"
+kubectl apply -f ./k8s/apps/n8n/n8n-hpa.yaml
 kubectl apply -f ./k8s/apps/n8n/n8n-ingress.yaml
 
 echo "[INFO] Aguardando n8n ficar pronto..."
 kubectl rollout status deployment/n8n -n n8n
 
-echo "======== [7/7] Configurando hosts automaticamente ========"
+echo "======== [9/9] Configurando hosts automaticamente ========"
 N8N_DOMAIN="n8n.local.127.0.0.1.nip.io"
 
 if ! grep -q "$N8N_DOMAIN" /etc/hosts; then
