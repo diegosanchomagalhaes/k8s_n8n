@@ -11,12 +11,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "======== [1/3] Removendo PostgreSQL ========"
+echo "======== [1/4] Removendo aplicações (se ainda existirem) ========"
+kubectl delete namespace n8n --ignore-not-found
+kubectl delete namespace grafana --ignore-not-found
+
+echo "======== [2/4] Removendo PostgreSQL ========"
 kubectl delete -f infra/postgres/postgres.yaml --ignore-not-found
 kubectl delete -f infra/postgres/postgres-secret-admin.yaml --ignore-not-found
-kubectl delete -f infra/postgres/postgres-pv.yaml --ignore-not-found
+echo "💾 MANTENDO: PVs e PVCs PostgreSQL (dados preservados)"
 
-echo "======== [2/3] Removendo cert-manager ========"
+echo "======== [3/4] Removendo Redis ========"
+kubectl delete -f infra/redis/redis.yaml --ignore-not-found
+kubectl delete -f infra/redis/redis-secret.yaml --ignore-not-found
+echo "💾 MANTENDO: PVs e PVCs Redis (dados preservados)"
+
+echo "======== [4/4] Removendo cert-manager ========"
 # Remover ClusterIssuer primeiro
 kubectl delete -f infra/cert-manager/cluster-issuer-selfsigned.yaml --ignore-not-found
 # Remover namespace cert-manager (isso remove tudo dentro)
@@ -25,18 +34,19 @@ kubectl delete namespace cert-manager --ignore-not-found
 echo "🗑️  Removendo cert-manager..."
 kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml --ignore-not-found
 
-echo "======== [3/3] Removendo cluster k3d ========"
+echo "======== [5/5] Removendo cluster k3d ========"
 # Remove o cluster mas dados hostPath são preservados
 k3d cluster delete k3d-cluster
 
 echo ""
 echo "🎉 Infraestrutura base removida!"
 echo "💾 DADOS PRESERVADOS em:"
-echo "   📁 /home/dsm/cluster/postgresql (dados PostgreSQL)"
-echo "   � /home/dsm/cluster/redis (dados Redis)" 
-echo "   📁 /home/dsm/cluster/pvc/n8n (dados n8n)"
-echo "   📁 /home/dsm/cluster/pvc/grafana (dados Grafana)"
+echo "   📁 /home/dsm/cluster/postgresql (databases: postgres, n8n, grafana)"
+echo "   📁 /home/dsm/cluster/redis (cache: db0=n8n, db1=grafana)" 
+echo "   📁 /home/dsm/cluster/applications/n8n/ (configurações e arquivos)"
+echo "   📁 /home/dsm/cluster/applications/grafana/ (dados e logs)"
 echo ""
-echo "💡 Para iniciar novamente:"
-echo "   ./infra/scripts/10.start-infra.sh"
+echo "💡 Para recriar tudo:"
+echo "   ./start-all.sh                    # Infraestrutura + aplicações"
+echo "   ./infra/scripts/1.create-infra.sh # Somente infraestrutura"
 echo ""

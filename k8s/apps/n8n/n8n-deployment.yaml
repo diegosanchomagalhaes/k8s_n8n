@@ -13,6 +13,8 @@ spec:
       labels:
         app: n8n
     spec:
+      securityContext:
+        fsGroup: 1000
       initContainers:
         - name: create-database
           image: postgres:16
@@ -51,9 +53,29 @@ spec:
               echo "Creating database 'n8n' if it doesn't exist..."
               psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'n8n'" | grep -q 1 || psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -c "CREATE DATABASE n8n"
               echo "Database setup complete!"
+        - name: fix-permissions
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "Fixing permissions for n8n directories..."
+              chown -R 1000:1000 /home/node/.n8n /files
+              chmod -R 755 /home/node/.n8n /files
+              echo "Permissions fixed!"
+          volumeMounts:
+            - name: n8n-data
+              mountPath: /home/node/.n8n
+            - name: n8n-files
+              mountPath: /files
+          securityContext:
+            runAsUser: 0
       containers:
         - name: n8n
           image: n8nio/n8n:1.114.4
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           ports:
             - containerPort: 5678
           env:

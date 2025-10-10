@@ -31,7 +31,8 @@ kubectl delete -f ./k8s/apps/grafana/grafana-secret-db.yaml --ignore-not-found
 
 echo "======== MANTENDO PVCs Grafana (dados persistentes) ========"
 echo "  💾 PVCs mantidos para preservar dados em hostPath"
-echo "  📁 Dados em: /home/dsm/cluster/pvc/grafana"
+echo "  📁 Dados: /home/dsm/cluster/applications/grafana/data/"
+echo "  📁 Logs: /home/dsm/cluster/applications/grafana/logs/"
 
 echo "======== [7/8] Removendo Namespace (e todos os recursos) ========"
 kubectl delete namespace grafana --ignore-not-found
@@ -45,10 +46,11 @@ fi
 
 echo ""
 echo "🎉 Aplicação Grafana removida!"
-echo "� DADOS PRESERVADOS:"
-echo "   📁 Base de dados grafana no PostgreSQL"
-echo "   📁 PVCs em: /home/dsm/cluster/pvc/grafana"
-echo "   🔴 Redis (compartilhado) mantido"
+echo "💾 DADOS PRESERVADOS:"
+echo "   �️ Database 'grafana' no PostgreSQL (dashboards, configurações)"
+echo "   📁 Dados: /home/dsm/cluster/applications/grafana/data/ (plugins, dashboards)"
+echo "   📁 Logs: /home/dsm/cluster/applications/grafana/logs/"
+echo "   � Redis database 1 (cache)"
 echo ""
 echo "💡 Para recriar a aplicação:"
 echo "   ./k8s/apps/grafana/scripts/3.start-grafana.sh"

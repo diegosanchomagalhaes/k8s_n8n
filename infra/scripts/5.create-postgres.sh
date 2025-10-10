@@ -11,8 +11,11 @@ echo "======== Criando PostgreSQL na infra ========"
 echo "[1/4] Criando namespace postgres..."
 kubectl apply -f infra/postgres/postgres.yaml
 
-echo "[2/4] Aplicando PV/PVC..."
-kubectl apply -f infra/postgres/postgres-pv.yaml
+echo "[2/4] Aplicando PV hostPath..."
+kubectl apply -f infra/postgres/postgres-pv-hostpath.yaml
+
+echo "[2.5/4] Aplicando PVC..."
+kubectl apply -f infra/postgres/postgres-pvc.yaml
 
 echo "[3/4] Aplicando Secret admin..."
 kubectl apply -f infra/postgres/postgres-secret-admin.yaml

@@ -94,6 +94,9 @@ A infraestrutura base é composta por:
 | `9.setup-directories.sh`   | **Estrutura de diretórios**   | Organiza hostPath storage               |
 | `11.create-redis.sh`       | Redis cache                   | Deployment + PV + Secret                |
 | `12.delete-redis.sh`       | Remover Redis                 | Cleanup cache                           |
+| `13.configure-hostpath.sh` | Configurar templates PV       | Templates hostPath                      |
+| `14.clean-cluster-data.sh` | **Limpar dados persistentes** | Remove TODOS os dados hostPath          |
+| `15.test-persistence.sh`   | **Testar persistência**       | Destroy cluster + manter dados          |
 
 ### Uso dos Scripts
 
@@ -104,6 +107,9 @@ A infraestrutura base é composta por:
 
 # 🗑️ Limpeza completa
 ./infra/scripts/2.destroy-infra.sh    # Remove cluster + limpeza total
+
+# 🧪 Teste de persistência
+./infra/scripts/15.test-persistence.sh  # Testa que dados sobrevivem ao destroy
 
 # 🔧 Componentes individuais
 ./infra/scripts/3.create-cluster.sh   # Somente k3d

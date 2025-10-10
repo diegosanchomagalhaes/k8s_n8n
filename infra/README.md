@@ -1,22 +1,57 @@
-# 🏗️ Infraestrutura - k3d + PostgreSQL + cert-manager
+# 🏗️ Infraestrutura - k3d + PostgreSQL + Redis + cert-manager
 
-> Configuração de infraestrutura base para desenvolvimento local com k3d
+> Configuração de infraestrutura base com persistência hostPath real (PaaS-like behavior)
 
 ## 📁 Estrutura
 
 ```
 infra/
 ├── k3d/
-│   └── k3d-config.yaml          # Configuração do cluster k3d
+│   └── k3d-config.yaml          # Configuração do cluster k3d com volume bind
 ├── postgres/
-│   ├── postgres-pv.yaml         # Persistent Volume (20Gi)
-│   ├── postgres-secret-admin.yaml # Credenciais admin PostgreSQL
-│   └── postgres.yaml            # StatefulSet + Service
+│   ├── postgres-pv-hostpath.yaml   # PV hostPath (/home/dsm/cluster/postgresql/data)
+│   ├── postgres-pvc.yaml           # PVC separado para PostgreSQL
+│   ├── postgres-secret-admin.yaml  # Credenciais admin PostgreSQL
+│   └── postgres.yaml               # StatefulSet + Service
+├── redis/
+│   ├── redis-pv-hostpath.yaml      # PV hostPath (/home/dsm/cluster/redis)
+│   ├── redis-pvc.yaml              # PVC separado para Redis
+│   ├── redis-secret.yaml           # Credenciais Redis
+│   └── redis.yaml                  # Deployment + Service
 ├── scripts/
-│   ├── 9.start-infra.sh         # 🚀 Deploy infraestrutura completa
-│   └── 2.destroy-infra.sh       # 🗑️ Destruir infraestrutura
-└── README.md                    # Este arquivo
+│   ├── 9.setup-directories.sh      # 📁 Criar estrutura /home/dsm/cluster/
+│   ├── 10.create-postgres.sh       # 🐘 Deploy PostgreSQL com hostPath
+│   ├── 11.create-redis.sh          # 🔴 Deploy Redis com hostPath
+│   └── 2.destroy-infra.sh          # 🗑️ Destruir infraestrutura
+└── README.md                       # Este arquivo
 ```
+
+## 🎯 **Persistência hostPath - TRUE PaaS**
+
+### **✅ Implementação Atual**
+
+**Cluster com volume bind real:**
+
+```bash
+k3d cluster create --volume "/home/dsm/cluster:/home/dsm/cluster@all"
+```
+
+**Estrutura de persistência:**
+
+```
+/home/dsm/cluster/
+├── postgresql/data/        # PostgreSQL 16 - Dados persistentes
+├── redis/                  # Redis cache - AOF persistente
+└── pvc/
+    ├── n8n/               # n8n workflows
+    └── grafana/           # Grafana dashboards
+```
+
+### **🔄 Arquitetura PV/PVC Separada**
+
+- **PV (Persistent Volume)**: Define **ONDE** os dados são armazenados no host
+- **PVC (Persistent Volume Claim)**: Define **COMO** as aplicações requisitam storage
+- **Benefício**: Separação clara entre infraestrutura e aplicação
 
 ## 🚀 Scripts Principais
 
@@ -28,17 +63,20 @@ infra/
 
 **O que faz:**
 
-1. ✅ Cria cluster k3d com configuração personalizada
-2. ✅ Deploy PostgreSQL 16 com volume persistente (20Gi)
-3. ✅ Instala cert-manager v1.18.2
-4. ✅ Configura ClusterIssuer para certificados self-signed
-5. ✅ Verifica saúde de todos os componentes
+1. ✅ Cria cluster k3d com volume bind real (`/home/dsm/cluster:/home/dsm/cluster@all`)
+2. ✅ Configura estrutura de diretórios hostPath
+3. ✅ Deploy PostgreSQL 16 com persistência hostPath (20Gi)
+4. ✅ Deploy Redis 8.2.1 com persistência hostPath (5Gi)
+5. ✅ Instala cert-manager v1.18.2
+6. ✅ Configura ClusterIssuer para certificados self-signed
+7. ✅ Verifica saúde de todos os componentes
 
 **Portas mapeadas:**
 
 - `8080:80` - HTTP (Traefik Ingress)
 - `8443:443` - HTTPS (Traefik Ingress)
 - `30432:30432` - PostgreSQL (NodePort)
+- `6379` - Redis (ClusterIP)
 
 ### **🗑️ destroy-infra.sh - Limpeza Completa**
 
@@ -48,10 +86,12 @@ infra/
 
 **O que faz:**
 
-1. ✅ Remove cert-manager
-2. ✅ Remove PostgreSQL (StatefulSet + PVC)
-3. ✅ Destroi cluster k3d completo
-4. ✅ Limpeza de volumes Docker
+1. ✅ Remove cert-manager e todos os certificados
+2. ✅ Remove PostgreSQL (StatefulSet + PVC + PV)
+3. ✅ Remove Redis (Deployment + PVC + PV)
+4. ✅ Destroi cluster k3d completo
+5. ✅ **MANTÉM** dados em `/home/dsm/cluster/` (PaaS behavior)
+6. ✅ Limpeza de volumes Docker
 
 ## 🔧 Configurações Importantes
 

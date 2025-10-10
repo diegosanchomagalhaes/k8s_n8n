@@ -1,6 +1,36 @@
-# 🗄️ Sistema de Backup para Kubernetes
+# 🗄️ Sistema de Backup para Kubernetes com Persistência hostPath
 
-Sistema completo de backup e restore para aplicações Kubernetes com automação via CronJobs.
+Sistema completo de backup e restore para aplicações Kubernetes com **persistência real no host** e automação via CronJobs.
+
+## 🎯 **Persistência hostPath vs Backup**
+
+### **✅ Persistência Automática (Ativa)**
+
+Com a implementação hostPath, os dados **já são persistentes** no host:
+
+```
+/home/dsm/cluster/
+├── postgresql/data/     # PostgreSQL - Dados já persistem
+├── redis/              # Redis AOF - Cache já persiste
+└── pvc/
+    ├── n8n/           # n8n workflows - Já persistem
+    └── grafana/       # Grafana dashboards - Já persistem
+```
+
+**🔄 TRUE PaaS Behavior:**
+
+- Cluster pode ser **destruído** e **recriado**
+- **TODOS os dados sobrevivem** automaticamente
+- **Zero perda de dados** durante manutenção
+
+### **🗄️ Backup Adicional (Redundância)**
+
+Os scripts de backup servem para:
+
+- **📦 Redundância externa**: Backup fora do host
+- **🔄 Migração**: Mover dados entre ambientes
+- **📅 Versionamento**: Manter histórico de mudanças
+- **☁️ Cloud Backup**: Upload para AWS S3, Azure Blob, etc.
 
 ## 📋 Estrutura
 

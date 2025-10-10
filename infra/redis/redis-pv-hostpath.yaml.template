@@ -1,0 +1,42 @@
+# Redis PersistentVolume com hostPath para persistência real
+# Template: Substitua [CLUSTER_BASE_PATH] pelo seu path base
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-pv-hostpath
+  labels:
+    app: redis
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/redis/data
+    type: DirectoryOrCreate
+---
+# PersistentVolumeClaim atualizado para usar hostPath
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: redis
+  labels:
+    app: redis
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      app: redis
+      component: storage
+      storage-type: hostpath

@@ -1,0 +1,43 @@
+# n8n PVs - Persistent Volumes para dados específicos da aplicação
+# Estrutura: /mnt/cluster/applications/n8n/
+# Dados de banco ficam separados: PostgreSQL + Redis
+
+# PV para configurações do n8n (/home/node/.n8n)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: n8n-pv-hostpath
+  labels:
+    app: n8n
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/n8n/config
+    type: DirectoryOrCreate
+---
+# PV adicional para arquivos do n8n
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: n8n-data-pv-hostpath
+  labels:
+    app: n8n
+    component: data
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/n8n/files
+    type: DirectoryOrCreate

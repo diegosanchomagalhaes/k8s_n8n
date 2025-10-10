@@ -13,7 +13,8 @@
 - ✅ **PostgreSQL Integration**: Database dedicado 'grafana'
 - ✅ **HTTPS/TLS**: Certificados automáticos via cert-manager
 - ✅ **Auto-scaling**: HPA configurado (1-3 replicas)
-- ✅ **Persistent Storage**: PVCs automáticos (10Gi + 5Gi)
+- ✅ **hostPath Persistence**: Dados em `/home/dsm/cluster/pvc/grafana` (TRUE PaaS)
+- ✅ **Separated PV/PVC**: Arquitetura limpa com PV/PVC separados
 - ✅ **Security**: Secrets, non-root user, resource limits
 
 ## 🌐 **Acesso**
@@ -162,7 +163,8 @@ k8s/apps/grafana/
 ├── scripts/
 │   ├── 1.deploy-grafana.sh      # 🚀 Deploy completo
 │   ├── 2.destroy-grafana.sh     # 🗑️ Remoção completa
-│   └── 3.restart-grafana.sh     # 🔄 Restart (mantém dados)
+│   ├── 5.restart-grafana.sh     # 🔄 Restart (mantém dados)
+│   └── 6.delete-volumes-grafana.sh # 🗑️ Remove PVs e PVCs para recriar
 ├── grafana-*.yaml               # 📄 Manifests Kubernetes
 └── README.md                    # 📚 Esta documentação
 ```
@@ -174,7 +176,7 @@ k8s/apps/grafana/
 ./k8s/apps/grafana/scripts/1.deploy-grafana.sh
 
 # Restart (preserva dados e configurações)
-./k8s/apps/grafana/scripts/3.restart-grafana.sh
+./k8s/apps/grafana/scripts/5.restart-grafana.sh
 
 # Remoção completa (⚠️ remove todos os dados)
 ./k8s/apps/grafana/scripts/2.destroy-grafana.sh
@@ -277,7 +279,7 @@ kubectl scale deployment grafana -n grafana --replicas=2
 kubectl patch secret grafana-db-secret -n grafana -p '{\"data\":{\"GF_SECURITY_ADMIN_PASSWORD\":\"NOVA_SENHA_BASE64\"}}'
 
 # Restart para aplicar
-./k8s/apps/grafana/scripts/3.restart-grafana.sh
+./k8s/apps/grafana/scripts/5.restart-grafana.sh
 ```
 
 ### **📊 Auditoria**

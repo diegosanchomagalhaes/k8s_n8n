@@ -1,5 +1,6 @@
-# Grafana PVC - Persistent Volume Claims
-# Armazenamento para dados e configurações do Grafana
+# Grafana PVCs - Persistent Volume Claims
+# Define COMO as aplicações solicitam armazenamento
+# Vincula-se aos PVs através dos seletores (labels)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -11,7 +12,12 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path # k3d default storage class
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: grafana
+      component: storage
+      storage-type: hostpath
   resources:
     requests:
       storage: 10Gi
@@ -28,7 +34,12 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path # k3d default storage class
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: grafana
+      component: data-storage
+      storage-type: hostpath
   resources:
     requests:
       storage: 5Gi

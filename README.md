@@ -11,14 +11,15 @@
 
 ## 🎯 **Status Atual - Infraestrutura Completa**
 
-- ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer
-- ✅ **PostgreSQL 16**: Persistente com backup/restore
-- ✅ **Redis 8.2.1**: Cache para n8n com persistência
-- ✅ **n8n 1.114.4**: HTTPS via cert-manager + TLS automático + Redis cache
-- ✅ **Grafana 12.2**: Monitoramento com PostgreSQL + HTTPS + auto-scaling
+- ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer com volume bind real
+- ✅ **PostgreSQL 16**: Persistência hostPath em `/home/dsm/cluster/postgresql/data`
+- ✅ **Redis 8.2.1**: Cache persistente com hostPath em `/home/dsm/cluster/redis`
+- ✅ **n8n 1.114.4**: HTTPS + TLS automático + persistência hostPath + Redis cache
+- ✅ **Grafana 12.2**: Monitoramento + HTTPS + persistência hostPath + auto-scaling
 - ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
-- ✅ **Sistema de Backup**: PostgreSQL + PVCs completo
-- ✅ **Namespaces Organizados**: Separação adequada de recursos
+- ✅ **Sistema de Backup**: PostgreSQL + PVCs com persistência real no host
+- ✅ **Namespaces Organizados**: postgres, redis, n8n, grafana, cert-manager
+- ✅ **TRUE PaaS BEHAVIOR**: Dados sobrevivem à destruição/recriação do cluster
 
 ## 🌐 **Pontos de Acesso**
 
@@ -31,7 +32,46 @@
 
 > ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
-## 📋 Sumário
+## � **Configuração de Persistência**
+
+### **⚠️ Dados Persistentes vs Temporários**
+
+**🔴 Configuração Padrão (Temporária):**
+
+- Dados salvos **dentro do cluster** (`/var/lib/rancher/k3s/storage/`)
+- **Perdidos** quando cluster é destruído (`k3d cluster delete`)
+
+**✅ Configuração Recomendada (Persistente):**
+
+- Dados salvos em **`/home/dsm/cluster/`** (hostPath)
+- **Sobrevivem** à destruição do cluster
+
+### **🔧 Como Ativar Persistência Real**
+
+```bash
+# 1. Configurar templates com seu path
+./infra/scripts/13.configure-hostpath.sh
+
+# 2. Criar estrutura de diretórios
+./infra/scripts/9.setup-directories.sh
+
+# 3. Deploy com persistência
+./start-all.sh
+```
+
+**📁 Estrutura de dados persistente:**
+
+```
+/home/dsm/cluster/
+├── postgresql/data/        # PostgreSQL database
+├── redis/data/             # Redis cache
+├── n8n/data/              # n8n workflows
+├── n8n/user-data/         # n8n user files
+├── grafana/data/          # Grafana dashboards
+└── grafana/plugins-dashboards/  # Grafana plugins
+```
+
+## �📋 Sumário
 
 - [Pré-requisitos](#-pré-requisitos) ⚠️ **LEIA PRIMEIRO (Windows/WSL2)**
 - [Instalação](#-instalação)
@@ -369,14 +409,15 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 
 ### **📖 Documentos Principais**
 
-| 📄 **Documento**                             | 🎯 **Foco**       | 📋 **Conteúdo**                                    |
-| -------------------------------------------- | ----------------- | -------------------------------------------------- |
-| **[README.md](README.md)**                   | Overview geral    | Instalação, SSH, início rápido, visão geral        |
-| **[README-INFRA.md](README-INFRA.md)**       | Infraestrutura    | k3d, PostgreSQL, cert-manager, storage, networking |
-| **[README-N8N.md](README-N8N.md)**           | Aplicação n8n     | Deploy, configuração, scaling, troubleshooting     |
-| **[README-GRAFANA.md](README-GRAFANA.md)**   | Aplicação Grafana | Deploy, dashboards, monitoramento, observabilidade |
-| **[README-WSL2.md](README-WSL2.md)**         | Configuração WSL2 | Otimização, performance, troubleshooting WSL2      |
-| **[README-SECURITY.md](README-SECURITY.md)** | Segurança         | Templates, credenciais, boas práticas              |
+| 📄 **Documento**                                   | 🎯 **Foco**           | 📋 **Conteúdo**                                    |
+| -------------------------------------------------- | --------------------- | -------------------------------------------------- |
+| **[README.md](README.md)**                         | Overview geral        | Instalação, SSH, início rápido, visão geral        |
+| **[README-INFRA.md](README-INFRA.md)**             | Infraestrutura        | k3d, PostgreSQL, cert-manager, storage, networking |
+| **[README-N8N.md](README-N8N.md)**                 | Aplicação n8n         | Deploy, configuração, scaling, troubleshooting     |
+| **[README-GRAFANA.md](README-GRAFANA.md)**         | Aplicação Grafana     | Deploy, dashboards, monitoramento, observabilidade |
+| **[README-PERSISTENCE.md](README-PERSISTENCE.md)** | Persistência de Dados | hostPath volumes, backup, configuração templates   |
+| **[README-WSL2.md](README-WSL2.md)**               | Configuração WSL2     | Otimização, performance, troubleshooting WSL2      |
+| **[README-SECURITY.md](README-SECURITY.md)**       | Segurança             | Templates, credenciais, boas práticas              |
 
 ### **🔄 Quando Usar Cada Documento**
 
@@ -384,6 +425,7 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 - **🏗️ Problemas de infraestrutura?** → Consulte **[README-INFRA.md](README-INFRA.md)**
 - **🔧 Questões específicas do n8n?** → Veja **[README-N8N.md](README-N8N.md)**
 - **📊 Monitoramento e Grafana?** → Veja **[README-GRAFANA.md](README-GRAFANA.md)**
+- **💾 Dados não persistem após destruir cluster?** → Veja **[README-PERSISTENCE.md](README-PERSISTENCE.md)**
 - **💻 Configuração WSL2?** → Consulte **[README-WSL2.md](README-WSL2.md)**
 - **🔐 Segurança e credenciais?** → Veja **[README-SECURITY.md](README-SECURITY.md)**
 - **📈 Expandindo para novas aplicações?** → Use os documentos como template
@@ -559,6 +601,7 @@ k3d-local-development/
 ├── 📖 README.md                    # Este arquivo (overview geral)
 ├── 📖 README-INFRA.md              # Documentação de infraestrutura
 ├── 📖 README-N8N.md                # Documentação da aplicação n8n
+├── 📖 README-PERSISTENCE.md        # Documentação de persistência de dados
 ├── infra/                          # Infraestrutura base (k3d, PostgreSQL, cert-manager)
 │   ├── k3d/                        # Configuração do cluster
 │   ├── cert-manager/               # Certificados TLS
@@ -821,15 +864,17 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ### **🔧 Scripts Específicos**
 
-| **Categoria**              | **Script**                                    | **Função**                                  |
-| -------------------------- | --------------------------------------------- | ------------------------------------------- |
-| **🚀 Deploy Completo**     | `start-all.sh`                                | Infraestrutura + todas aplicações           |
-| **🏗️ Infraestrutura**      | `infra/scripts/10.start-infra.sh`             | Cluster + PostgreSQL + Redis + cert-manager |
-| **� Aplicação n8n**        | `k8s/apps/n8n/scripts/3.start-n8n.sh`         | Deploy n8n com HTTPS                        |
-| **📊 Aplicação Grafana**   | `k8s/apps/grafana/scripts/3.start-grafana.sh` | Deploy Grafana com HTTPS                    |
-| **🗑️ Limpeza Infra**       | `infra/scripts/2.destroy-infra.sh`            | Remove cluster (mantém dados hostPath)      |
-| **�️ Limpeza Aplicações**  | `k8s/apps/*/scripts/2.destroy-*.sh`           | Remove app (mantém dados)                   |
-| **💥 Limpeza Completa DB** | `k8s/apps/*/scripts/4.drop-database-*.sh`     | Remove PERMANENTEMENTE dados da aplicação   |
+| **Categoria**              | **Script**                                    | **Função**                                     |
+| -------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| **🚀 Deploy Completo**     | `start-all.sh`                                | Infraestrutura + todas aplicações              |
+| **🏗️ Infraestrutura**      | `infra/scripts/10.start-infra.sh`             | Cluster + PostgreSQL + Redis + cert-manager    |
+| **� Aplicação n8n**        | `k8s/apps/n8n/scripts/3.start-n8n.sh`         | Deploy n8n com HTTPS                           |
+| **📊 Aplicação Grafana**   | `k8s/apps/grafana/scripts/3.start-grafana.sh` | Deploy Grafana com HTTPS                       |
+| **🗑️ Limpeza Infra**       | `infra/scripts/2.destroy-infra.sh`            | Remove cluster (mantém dados hostPath)         |
+| **� Teste Persistência**   | `infra/scripts/15.test-persistence.sh`        | Testa que dados sobrevivem destroy cluster     |
+| **�🧹 Limpeza Dados**      | `infra/scripts/14.clean-cluster-data.sh`      | Remove TODOS os dados hostPath (restart limpo) |
+| **�️ Limpeza Aplicações**  | `k8s/apps/*/scripts/2.destroy-*.sh`           | Remove app (mantém dados)                      |
+| **💥 Limpeza Completa DB** | `k8s/apps/*/scripts/4.drop-database-*.sh`     | Remove PERMANENTEMENTE dados da aplicação      |
 
 > 📚 **Lista completa de scripts**: Consulte **[README-INFRA.md](README-INFRA.md)** para todos os scripts disponíveis e suas funções específicas.
 
@@ -956,6 +1001,7 @@ Para problemas específicos, consulte a documentação modular:
 
 - **🏗️ Infraestrutura (k3d, PostgreSQL, cert-manager)**: **[README-INFRA.md](README-INFRA.md)**
 - **📱 Aplicação n8n (deployment, acesso, scaling)**: **[README-N8N.md](README-N8N.md)**
+- **💾 Persistência de dados (hostPath, backup, templates)**: **[README-PERSISTENCE.md](README-PERSISTENCE.md)**
 
 ### **🆘 Script de Diagnóstico**
 

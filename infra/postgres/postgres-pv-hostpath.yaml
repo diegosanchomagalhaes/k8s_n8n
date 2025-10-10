@@ -1,0 +1,21 @@
+# PostgreSQL PV - Persistent Volume com hostPath para persistência real
+# Define ONDE os dados ficam armazenados no host físico
+# Contém databases: postgres (admin), n8n, grafana
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-hostpath
+  labels:
+    app: postgres
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/postgresql
+    type: DirectoryOrCreate

@@ -12,10 +12,13 @@ kubectl apply -f ./k8s/apps/grafana/grafana-namespace.yaml
 echo "======== [2/9] Criando Secret de conexão com o banco ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-secret-db.yaml
 
-echo "======== [3/9] Criando PVCs Grafana (Persistent Volume Claims) ========"
+echo "======== [3/9] Criando PVs Grafana (Persistent Volumes) ========"
+kubectl apply -f ./k8s/apps/grafana/grafana-pv-hostpath.yaml
+
+echo "======== [4/9] Criando PVCs Grafana (Persistent Volume Claims) ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-pvc.yaml
 
-echo "======== [4/9] Verificando dependências (PostgreSQL) ========"
+echo "======== [5/9] Verificando dependências (PostgreSQL) ========"
 echo "  → Verificando PostgreSQL..."
 if ! kubectl get pods -n postgres -l app=postgres 2>/dev/null | grep -q "Running"; then
     echo "❌ PostgreSQL não está rodando no namespace 'postgres'"
@@ -24,22 +27,22 @@ if ! kubectl get pods -n postgres -l app=postgres 2>/dev/null | grep -q "Running
 fi
 echo "  ✅ PostgreSQL OK"
 
-echo "======== [5/9] Criando database 'grafana' no PostgreSQL ========"
+echo "======== [6/9] Criando database 'grafana' no PostgreSQL ========"
 # Criar database grafana se não existir (Grafana usará credenciais postgres admin do secret)
 kubectl exec -n postgres postgres-0 -- psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'grafana'" | grep -q 1 || \
 kubectl exec -n postgres postgres-0 -- psql -U postgres -c "CREATE DATABASE grafana;"
 echo "  ✅ Database 'grafana' criado (usando credenciais postgres admin do secret)"
 
-echo "======== [6/9] Criando TLS Certificate ========"
+echo "======== [7/9] Criando TLS Certificate ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-certificate.yaml
 
-echo "======== [7/9] Criando Deployment Grafana ========"
+echo "======== [8/9] Criando Deployment Grafana ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-deployment.yaml
 
-echo "======== [8/9] Criando Service Grafana ========"
+echo "======== [9/9] Criando Service Grafana ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-service.yaml
 
-echo "======== [9/9] Criando HPA e Ingress ========"
+echo "======== [10/10] Criando HPA e Ingress ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-hpa.yaml
 kubectl apply -f ./k8s/apps/grafana/grafana-ingress.yaml
 

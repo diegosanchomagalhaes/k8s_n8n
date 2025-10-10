@@ -1,0 +1,86 @@
+# Grafana PersistentVolumes com hostPath para persistência real
+# Template: Substitua [CLUSTER_BASE_PATH] pelo seu path base
+
+# PV principal para dados do Grafana
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-pv-hostpath
+  labels:
+    app: grafana
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/pvc/grafana
+    type: DirectoryOrCreate
+---
+# PV adicional para dados específicos do Grafana
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-data-pv-hostpath
+  labels:
+    app: grafana
+    component: data-storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/pvc/grafana
+    type: DirectoryOrCreate
+---
+# PersistentVolumeClaim principal atualizado
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: grafana
+  labels:
+    app: grafana
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      app: grafana
+      component: storage
+      storage-type: hostpath
+---
+# PersistentVolumeClaim para dados específicos
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data-pvc
+  namespace: grafana
+  labels:
+    app: grafana
+    component: data-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      app: grafana
+      component: data-storage
+      storage-type: hostpath

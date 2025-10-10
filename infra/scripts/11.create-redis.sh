@@ -10,8 +10,9 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 echo "[1/4] Criando namespace redis..."
 kubectl apply -f "$PROJECT_ROOT/infra/redis/redis.yaml"
 
-echo "[2/4] Aplicando PV/PVC..."
-kubectl apply -f "$PROJECT_ROOT/infra/redis/redis-pv.yaml"
+echo "[2/4] Aplicando PV/PVC hostPath..."
+kubectl apply -f "$PROJECT_ROOT/infra/redis/redis-pv-hostpath.yaml"
+kubectl apply -f "$PROJECT_ROOT/infra/redis/redis-pvc.yaml"
 
 echo "[3/4] Aplicando Secret..."
 kubectl apply -f "$PROJECT_ROOT/infra/redis/redis-secret.yaml"

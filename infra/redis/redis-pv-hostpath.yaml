@@ -1,0 +1,21 @@
+# Redis PV - Persistent Volume com hostPath para persistência real
+# Define ONDE os dados ficam armazenados no host físico
+# Contém databases: 0 (n8n), 1 (grafana), 2-15 (disponíveis)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-pv-hostpath
+  labels:
+    app: redis
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/redis
+    type: DirectoryOrCreate

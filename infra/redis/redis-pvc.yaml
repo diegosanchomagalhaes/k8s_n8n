@@ -1,0 +1,23 @@
+# Redis PVC - Persistent Volume Claim
+# Define COMO a aplicação Redis solicita armazenamento
+# Vincula-se ao PV através dos seletores (labels)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: redis
+  labels:
+    app: redis
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: redis
+      component: storage
+      storage-type: hostpath
+  resources:
+    requests:
+      storage: 5Gi

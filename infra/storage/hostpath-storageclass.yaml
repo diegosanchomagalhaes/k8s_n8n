@@ -1,0 +1,14 @@
+# StorageClass customizado para hostPath no k3d
+# Define como os volumes persistentes são provisionados
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hostpath-storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: rancher.io/local-path
+parameters:
+  # Não provisiona automaticamente - usa PVs manuais definidos nos PV files
+  volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true

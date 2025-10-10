@@ -15,6 +15,7 @@ echo "[2/3] Removendo Secret admin..."
 kubectl delete -f infra/postgres/postgres-secret-admin.yaml --ignore-not-found
 
 echo "[3/3] Removendo PV/PVC..."
-kubectl delete -f infra/postgres/postgres-pv.yaml --ignore-not-found
+kubectl delete -f infra/postgres/postgres-pv-hostpath.yaml --ignore-not-found
+kubectl delete -f infra/postgres/postgres-pvc.yaml --ignore-not-found
 
 echo "======== PostgreSQL removido ========"

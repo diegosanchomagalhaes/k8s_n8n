@@ -1,0 +1,43 @@
+# Grafana PVs - Persistent Volumes para dados específicos da aplicação
+# Estrutura: /mnt/cluster/applications/grafana/
+# Dados de banco ficam separados: PostgreSQL + Redis
+
+# PV para dados do Grafana (/var/lib/grafana)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-pv-hostpath
+  labels:
+    app: grafana
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/grafana/data
+    type: DirectoryOrCreate
+---
+# PV adicional para logs do Grafana
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-data-pv-hostpath
+  labels:
+    app: grafana
+    component: data-storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/grafana/logs
+    type: DirectoryOrCreate

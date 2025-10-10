@@ -35,7 +35,8 @@ kubectl delete -f ./k8s/apps/n8n/n8n-secret-db.yaml --ignore-not-found
 
 echo "======== MANTENDO PVCs n8n (dados persistentes) ========"
 echo "  💾 PVCs mantidos para preservar dados em hostPath"
-echo "  📁 Dados em: /home/dsm/cluster/pvc/n8n"
+echo "  📁 Configurações: /home/dsm/cluster/applications/n8n/config/"
+echo "  📁 Arquivos: /home/dsm/cluster/applications/n8n/files/"
 
 echo "======== Removendo Namespace ========"
 kubectl delete -f ./k8s/apps/n8n/n8n-namespace.yaml --ignore-not-found
@@ -43,9 +44,10 @@ kubectl delete -f ./k8s/apps/n8n/n8n-namespace.yaml --ignore-not-found
 echo ""
 echo "🎉 Aplicação n8n removida!"
 echo "💾 DADOS PRESERVADOS:"
-echo "   📁 Base de dados n8n no PostgreSQL"
-echo "   📁 PVCs em: /home/dsm/cluster/pvc/n8n"
-echo "   🔴 Redis (compartilhado) mantido"
+echo "   �️ Database 'n8n' no PostgreSQL (workflows, credenciais)"
+echo "   📁 Configurações: /home/dsm/cluster/applications/n8n/config/"
+echo "   � Arquivos: /home/dsm/cluster/applications/n8n/files/"
+echo "   🔄 Redis database 0 (cache)"
 echo ""
 echo "💡 Para recriar a aplicação:"
 echo "   ./k8s/apps/n8n/scripts/3.start-n8n.sh"

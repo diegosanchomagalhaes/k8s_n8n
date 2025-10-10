@@ -1,0 +1,22 @@
+# PostgreSQL PVC - Persistent Volume Claim
+# Requisição de armazenamento para dados do PostgreSQL
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: postgres
+  labels:
+    app: postgres
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: postgres
+      component: storage
+      storage-type: hostpath
+  resources:
+    requests:
+      storage: 20Gi

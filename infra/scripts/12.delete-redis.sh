@@ -14,7 +14,8 @@ echo "[2/3] Removendo Secret..."
 kubectl delete -f "$PROJECT_ROOT/infra/redis/redis-secret.yaml" --ignore-not-found=true
 
 echo "[3/3] Removendo PV/PVC..."
-kubectl delete -f "$PROJECT_ROOT/infra/redis/redis-pv.yaml" --ignore-not-found=true
+kubectl delete -f "$PROJECT_ROOT/infra/redis/redis-pv-hostpath.yaml" --ignore-not-found=true
+kubectl delete -f "$PROJECT_ROOT/infra/redis/redis-pvc.yaml" --ignore-not-found=true
 
 echo ""
 echo "✅ Redis removido com sucesso!"

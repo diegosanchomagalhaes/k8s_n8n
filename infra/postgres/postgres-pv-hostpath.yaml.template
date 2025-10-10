@@ -1,0 +1,42 @@
+# PostgreSQL PersistentVolume com hostPath para persistência real
+# Template: Substitua [CLUSTER_BASE_PATH] pelo seu path base
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-hostpath
+  labels:
+    app: postgres
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/postgresql/data
+    type: DirectoryOrCreate
+---
+# PersistentVolumeClaim atualizado para usar hostPath
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: postgres
+  labels:
+    app: postgres
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  resources:
+    requests:
+      storage: 20Gi
+  selector:
+    matchLabels:
+      app: postgres
+      component: storage
+      storage-type: hostpath

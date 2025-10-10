@@ -24,9 +24,11 @@
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
 - **Cache**: Redis 8.2.1 (performance otimizada)
+- **Persistência**: hostPath em `/home/dsm/cluster/pvc/n8n` (TRUE PaaS)
 - **Acesso**: HTTPS via Traefik Ingress
 - **Scaling**: HPA (Horizontal Pod Autoscaler)
 - **Certificados**: TLS via cert-manager
+- **Volume Strategy**: Separated PV/PVC architecture
 
 ## 🏗 Arquitetura
 
@@ -45,10 +47,11 @@ k8s/apps/n8n/
 ├── n8n-pvc.yaml               # Persistent Volume Claims
 └── scripts/
     ├── 1.deploy-n8n.sh        # Deploy completo n8n
-    └── 3.start-n8n.sh         # Script de inicialização
     ├── 2.destroy-n8n.sh       # Remove n8n + Redis
     ├── 3.start-n8n.sh         # Start/restart com verificação Redis
-    └── ...
+    ├── 4.stop-n8n.sh          # Para n8n deployment
+    ├── 5.restart-n8n.sh       # Restart n8n deployment
+    └── 6.delete-volumes-n8n.sh # Remove PVs e PVCs para recriar
 ```
 
 ### Fluxo de Dados
@@ -481,8 +484,11 @@ kubectl logs deployment/n8n -n n8n | grep worker
 # Verificar queue (se habilitado)
 kubectl logs deployment/n8n -n n8n | grep queue
 
-# Restart do deployment
+# Restart do deployment (manual)
 kubectl rollout restart deployment/n8n -n n8n
+
+# Restart com script (recomendado)
+./k8s/apps/n8n/scripts/5.restart-n8n.sh
 ```
 
 ### Problemas de Networking

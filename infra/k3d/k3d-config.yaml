@@ -15,3 +15,7 @@ ports:
   - port: 30432:30432
     nodeFilters:
       - loadbalancer
+volumes:
+  - volume: /home/dsm/cluster:/mnt/cluster
+    nodeFilters:
+      - all
