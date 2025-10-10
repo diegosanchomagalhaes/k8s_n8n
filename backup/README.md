@@ -36,15 +36,20 @@ Os scripts de backup servem para:
 
 ```
 backup/
-├── scripts/
-│   ├── backup-app.sh      # Script principal de backup
-│   ├── restore-app.sh     # Script de restauração
-│   └── manage-backups.sh  # Gerenciador de backups
+├── scripts/                         # 🗂️ Scripts organizados numericamente
+│   ├── 1.backup-postgresql.sh       # Backup PostgreSQL
+│   ├── 2.backup-applications.sh     # Backup aplicações (n8n, grafana)
+│   ├── 3.backup-complete.sh         # Backup completo
+│   ├── 4.restore-postgresql.sh      # Restore PostgreSQL
+│   ├── 5.restore-applications.sh    # Restore aplicações
+│   ├── 6.restore-complete.sh        # Restore completo
+│   └── 7.manage-backups.sh          # 🎛️ Gerenciador central
 ├── cronjobs/
-│   ├── backup-rbac.yaml   # Permissões para CronJobs
-│   └── n8n-backup-cronjob.yaml # Backup automático do n8n
-└── backups/
-    └── [app_name]/
+│   ├── backup-rbac.yaml             # Permissões para CronJobs
+│   └── n8n-backup-cronjob.yaml     # Backup automático
+└── backups/                         # 📁 Arquivos de backup
+    ├── postgresql/
+    └── applications/
         └── [timestamp]/   # Backups organizados por data
 ```
 
@@ -54,25 +59,27 @@ backup/
 
 ```bash
 # Backup completo do n8n
-./backup/scripts/manage-backups.sh create n8n full
+./backup/scripts/7.manage-backups.sh create n8n full
 
 # Apenas banco de dados
-./backup/scripts/manage-backups.sh create n8n db
+./backup/scripts/7.manage-backups.sh create n8n db
 
-# Apenas arquivos
-./backup/scripts/manage-backups.sh create n8n files
+# Backup completo via script direto
+./backup/scripts/3.backup-complete.sh
 ```
 
 ### Listar Backups
 
 ```bash
-./backup/scripts/manage-backups.sh list n8n
+./backup/scripts/7.manage-backups.sh list n8n
 ```
 
 ### Restaurar Backup
 
 ```bash
-./backup/scripts/manage-backups.sh restore n8n 20240924_143022
+./backup/scripts/7.manage-backups.sh restore n8n 20240924_143022
+# ou direto:
+./backup/scripts/5.restore-applications.sh n8n 20240924_143022 full
 ```
 
 ### Backup Automático

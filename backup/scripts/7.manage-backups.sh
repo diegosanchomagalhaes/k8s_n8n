@@ -21,7 +21,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Diretórios de backup no cluster
 POSTGRESQL_BACKUP_DIR="/mnt/host-cluster/postgresql/backup"
-PVC_BACKUP_DIR="/mnt/host-cluster/pvc/backup"
+PVC_BACKUP_DIR="/home/dsm/cluster/applications"
 
 COMMAND="${1}"
 APP="${2:-n8n}"

@@ -48,22 +48,22 @@ Uso: $0 [OPÇÕES]
 
 OPÇÕES:
     --postgresql-only   Fazer backup apenas do PostgreSQL
-    --pvc-only         Fazer backup apenas dos PVCs
-    --pvc PVC_NAME     Fazer backup apenas de um PVC específico
+    --applications-only Fazer backup apenas das Applications (n8n, grafana)
+    --app APP_NAME     Fazer backup apenas de uma aplicação específica
     --skip-cleanup     Não limpar backups antigos
     --verbose          Mostrar saída detalhada dos scripts
     --help             Mostrar esta ajuda
 
 EXEMPLOS:
-    $0                          # Backup completo (PostgreSQL + todos PVCs)
+    $0                          # Backup completo (PostgreSQL + todas applications)
     $0 --postgresql-only        # Apenas PostgreSQL
-    $0 --pvc-only              # Apenas PVCs
-    $0 --pvc postgres-pvc      # Apenas PostgreSQL + PVC específico
+    $0 --applications-only      # Apenas applications (n8n, grafana)
+    $0 --app n8n               # Apenas PostgreSQL + aplicação específica
 
 CONFIGURAÇÕES:
     Diretório base: ${BACKUP_BASE_DIR}
     PostgreSQL: ${BACKUP_BASE_DIR}/postgresql/backup
-    PVCs: ${BACKUP_BASE_DIR}/pvc/backup
+    Applications: ${BACKUP_BASE_DIR}/applications/backup
     Logs: ${BACKUP_LOGS_DIR}
 
 ESTRUTURA DO BACKUP:
@@ -96,21 +96,21 @@ create_logs_dir() {
 
 # Verificar se scripts de backup existem
 check_backup_scripts() {
-    local postgresql_script="${SCRIPT_DIR}/backup-postgresql.sh"
-    local pvc_script="${SCRIPT_DIR}/backup-pvc.sh"
+    local postgresql_script="${SCRIPT_DIR}/1.backup-postgresql.sh"
+    local applications_script="${SCRIPT_DIR}/2.backup-applications.sh"
     
     if [ ! -f "$postgresql_script" ]; then
         error "Script de backup PostgreSQL não encontrado: $postgresql_script"
         exit 1
     fi
     
-    if [ ! -f "$pvc_script" ]; then
-        error "Script de backup PVC não encontrado: $pvc_script"
+    if [ ! -f "$applications_script" ]; then
+        error "Script de backup Applications não encontrado: $applications_script"
         exit 1
     fi
     
     # Tornar scripts executáveis se necessário
-    chmod +x "$postgresql_script" "$pvc_script"
+    chmod +x "$postgresql_script" "$applications_script"
     
     success "Scripts de backup verificados e configurados"
 }
@@ -123,7 +123,7 @@ run_postgresql_backup() {
     log "=== INICIANDO BACKUP POSTGRESQL ==="
     
     if [ "$verbose" = true ]; then
-        if "${SCRIPT_DIR}/backup-postgresql.sh" 2>&1 | tee "$log_file"; then
+        if "${SCRIPT_DIR}/1.backup-postgresql.sh" 2>&1 | tee "$log_file"; then
             success "Backup PostgreSQL concluído com sucesso"
             return 0
         else
@@ -131,7 +131,7 @@ run_postgresql_backup() {
             return 1
         fi
     else
-        if "${SCRIPT_DIR}/backup-postgresql.sh" > "$log_file" 2>&1; then
+        if "${SCRIPT_DIR}/1.backup-postgresql.sh" > "$log_file" 2>&1; then
             success "Backup PostgreSQL concluído com sucesso"
             log "Log salvo em: $log_file"
             return 0

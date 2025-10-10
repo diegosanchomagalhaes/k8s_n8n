@@ -103,10 +103,10 @@ list_backups() {
     echo ""
     
     local pg_backups=$(find "${BACKUP_BASE_DIR}/postgresql/backup" -type d -name "20*" 2>/dev/null | sort -r)
-    local pvc_backups=$(find "${BACKUP_BASE_DIR}/pvc/backup" -type d -name "20*" 2>/dev/null | sort -r)
+    local app_backups=$(find "${BACKUP_BASE_DIR}/applications/backup" -type d -name "20*" 2>/dev/null | sort -r)
     
     # Combinar e ordenar timestamps únicos
-    local all_timestamps=$(echo -e "$pg_backups\n$pvc_backups" | grep -E '/20[0-9]{6}_[0-9]{6}$' | \
+    local all_timestamps=$(echo -e "$pg_backups\n$app_backups" | grep -E '/20[0-9]{6}_[0-9]{6}$' | \
         sed 's|.*/||' | sort -r | uniq)
     
     if [ -z "$all_timestamps" ]; then

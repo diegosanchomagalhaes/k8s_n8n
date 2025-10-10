@@ -22,7 +22,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Diretórios de backup no cluster (paths dentro do k3d)
 POSTGRESQL_BACKUP_DIR="/mnt/host-cluster/postgresql/backup"
-PVC_BACKUP_DIR="/mnt/host-cluster/pvc/backup"
+PVC_BACKUP_DIR="/home/dsm/cluster/applications"
 
 # Configurações
 APP_NAME="${1:-n8n}"
