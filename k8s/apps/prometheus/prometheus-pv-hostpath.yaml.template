@@ -18,7 +18,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: hostpath-storage
   hostPath:
-    path: [CLUSTER_BASE_PATH]/applications/prometheus
+    path: [CLUSTER_BASE_PATH]/applications/prometheus/data
     type: DirectoryOrCreate
 ---
 # PV adicional para configurações do Prometheus
