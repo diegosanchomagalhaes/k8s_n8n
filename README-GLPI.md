@@ -18,7 +18,7 @@ Este diretório contém a configuração completa do GLPI (Gestionnaire libre de
 
 ```
 ┌─────────────────┐    ┌──────────────┐    ┌─────────────────────┐
-│   Ingress       │────│    GLPI      │────│    MariaDB 12.0.2  │
+│   Ingress       │────│    GLPI      │────│    MariaDB 12.0.2   │
 │  (HTTPS/TLS)    │    │   Service    │    │   (fsGroup: 999)    │
 │ glpi.brioit.    │    │ (fsGroup:    │    │   Database: glpi    │
 │   local:8443    │    │   1000)      │    │   Port: 30306       │

@@ -1,0 +1,86 @@
+# Prometheus PersistentVolumes com hostPath para persistência real
+# Template: Substitua [CLUSTER_BASE_PATH] pelo seu path base
+
+# PV principal para dados do Prometheus
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-pv-hostpath
+  labels:
+    app: prometheus
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/applications/prometheus
+    type: DirectoryOrCreate
+---
+# PV adicional para configurações do Prometheus
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-config-pv-hostpath
+  labels:
+    app: prometheus
+    component: config
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/applications/prometheus/config
+    type: DirectoryOrCreate
+---
+# PersistentVolumeClaim principal atualizado
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: prometheus
+  labels:
+    app: prometheus
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  resources:
+    requests:
+      storage: 20Gi
+  selector:
+    matchLabels:
+      app: prometheus
+      component: storage
+      storage-type: hostpath
+---
+# PersistentVolumeClaim para configurações
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-config-pvc
+  namespace: prometheus
+  labels:
+    app: prometheus
+    component: config
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      app: prometheus
+      component: config
+      storage-type: hostpath

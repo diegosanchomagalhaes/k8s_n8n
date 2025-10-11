@@ -1,0 +1,41 @@
+# Prometheus PersistentVolumes com hostPath para persistência real
+
+# PV principal para dados do Prometheus
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-pv-hostpath
+  labels:
+    app: prometheus
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /home/dsm/cluster/applications/prometheus
+    type: DirectoryOrCreate
+---
+# PV adicional para configurações do Prometheus
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-config-pv-hostpath
+  labels:
+    app: prometheus
+    component: config
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /home/dsm/cluster/applications/prometheus/config
+    type: DirectoryOrCreate

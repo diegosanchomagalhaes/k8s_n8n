@@ -499,14 +499,15 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 
 ### **📦 Aplicações Implementadas**
 
-| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | 🔑 **Login**              | 📖 **Documentação**                        |
-| ---------------- | -------------------------- | ---------------------------------------------------- | ------------------------- | ------------------------------------------ |
-| **n8n**          | Automação de workflows     | https://n8n.local.127.0.0.1.nip.io:8443              | Setup inicial             | **[README-N8N.md](README-N8N.md)**         |
-| **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | admin / admin             | **[README-GRAFANA.md](README-GRAFANA.md)** |
-| **GLPI**         | Service Desk e ITSM        | https://glpi.local.127.0.0.1.nip.io:8443             | glpi / glpi               | Sistema de help desk                       |
-| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n/grafana/glpi                |
-| **PostgreSQL**   | Banco de dados (N8N/Graf.) | Interno (`postgres.postgres.svc.cluster.local:5432`) | postgres / postgres_admin | **[README-INFRA.md](README-INFRA.md)**     |
-| **MariaDB**      | Banco de dados (GLPI)      | Interno (`mariadb.mariadb.svc.cluster.local:3306`)   | mariadb_admin / \*\*\*    | Base de dados para GLPI                    |
+| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | 🔑 **Login**              | 📖 **Documentação**                              |
+| ---------------- | -------------------------- | ---------------------------------------------------- | ------------------------- | ------------------------------------------------ |
+| **n8n**          | Automação de workflows     | https://n8n.local.127.0.0.1.nip.io:8443              | Setup inicial             | **[README-N8N.md](README-N8N.md)**               |
+| **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | admin / admin             | **[README-GRAFANA.md](README-GRAFANA.md)**       |
+| **Prometheus**   | Métricas e alertas         | https://prometheus.local.127.0.0.1.nip.io:8443       | -                         | **[README-PROMETHEUS.md](README-PROMETHEUS.md)** |
+| **GLPI**         | Service Desk e ITSM        | https://glpi.local.127.0.0.1.nip.io:8443             | glpi / glpi               | **[README-GLPI.md](README-GLPI.md)**             |
+| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n/grafana/glpi/prometheus           |
+| **PostgreSQL**   | Banco de dados (Apps)      | Interno (`postgres.postgres.svc.cluster.local:5432`) | postgres / postgres_admin | **[README-INFRA.md](README-INFRA.md)**           |
+| **MariaDB**      | Banco de dados (GLPI)      | Interno (`mariadb.mariadb.svc.cluster.local:3306`)   | mariadb_admin / \*\*\*    | Base de dados para GLPI                          |
 
 ### **🔄 Adicionando Novas Aplicações**
 
@@ -522,9 +523,10 @@ cp -r k8s/apps/n8n/* k8s/apps/NOVA_APP/
 
 - **✅ n8n**: Automação de workflows (implementado)
 - **✅ Grafana**: Dashboards e monitoring (implementado)
+- **✅ Prometheus**: Métricas e alertas (implementado)
 - **✅ GLPI**: Service Desk e ITSM (implementado)
 - **✅ Redis**: Cache e sessões (implementado)
-- **✅ PostgreSQL**: Base de dados para n8n/grafana (implementado)
+- **✅ PostgreSQL**: Base de dados para apps (implementado)
 - **✅ MariaDB**: Base de dados para GLPI (implementado)
 - **🔄 MinIO**: Object storage S3-compatible (planejado)
 - **🔄 Prometheus**: Métricas detalhadas (planejado)
@@ -737,13 +739,14 @@ kubectl get pods -n redis              # Status do Redis
 
 ### **🌐 Acesso às Aplicações:**
 
-| Serviço        | URL                                           | Credenciais                              |
-| -------------- | --------------------------------------------- | ---------------------------------------- |
-| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443`     | Configurar no primeiro acesso            |
-| **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443` | admin / admin                            |
-| **GLPI**       | `https://glpi.local.127.0.0.1.nip.io:8443`    | glpi / glpi                              |
-| **PostgreSQL** | `localhost:30432`                             | user: `admin`, senha: definida no secret |
-| **MariaDB**    | `localhost:30306`                             | user: `mariadb_admin`, senha: no secret  |
+| Serviço        | URL                                              | Credenciais                              |
+| -------------- | ------------------------------------------------ | ---------------------------------------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443`        | Configurar no primeiro acesso            |
+| **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443`    | admin / admin                            |
+| **Prometheus** | `https://prometheus.local.127.0.0.1.nip.io:8443` | Interface de métricas                    |
+| **GLPI**       | `https://glpi.local.127.0.0.1.nip.io:8443`       | glpi / glpi                              |
+| **PostgreSQL** | `localhost:30432`                                | user: `admin`, senha: definida no secret |
+| **MariaDB**    | `localhost:30306`                                | user: `mariadb_admin`, senha: no secret  |
 
 ### **� Configuração da Porta 8443**
 

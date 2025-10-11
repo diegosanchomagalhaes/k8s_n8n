@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-tls
+  namespace: prometheus
+spec:
+  secretName: prometheus-tls
+  issuerRef:
+    name: k3d-selfsigned
+    kind: ClusterIssuer
+  dnsNames:
+    - prometheus.local.127.0.0.1.nip.io
