@@ -5,30 +5,35 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-8.2.1-red)](https://redis.io/)
+[![Redis](https://img.shields.io/badge/Redis-8.2.2-red)](https://redis.io/)
 [![n8n](https://img.shields.io/badge/n8n-1.114.4-orange)](https://n8n.io/)
-[![cert-manager](https://img.shields.io/badge/cert--manager-v1.18.2-green)](https://cert-manager.io/)
+[![cert-manager](https://img.shields.io/badge/cert--manager-v1.19.0-green)](https://cert-manager.io/)
 
 ## 🎯 **Status Atual - Infraestrutura Completa**
 
 - ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer com volume bind real
-- ✅ **PostgreSQL 16**: Persistência hostPath em `/home/dsm/cluster/postgresql/data`
-- ✅ **Redis 8.2.1**: Cache persistente com hostPath em `/home/dsm/cluster/redis`
-- ✅ **n8n 1.114.4**: HTTPS + TLS automático + persistência hostPath + Redis cache
-- ✅ **Grafana 12.2**: Monitoramento + HTTPS + persistência hostPath + auto-scaling
-- ✅ **cert-manager v1.18.2**: Certificados auto-renováveis (atualizado!)
-- ✅ **Sistema de Backup**: PostgreSQL + PVCs com persistência real no host
-- ✅ **Namespaces Organizados**: postgres, redis, n8n, grafana, cert-manager
+- ✅ **PostgreSQL 16**: Persistência hostPath + N8N/Grafana databases
+- ✅ **MariaDB 12.0.2**: Banco dedicado GLPI + persistência hostPath (NOVO!)
+- ✅ **Redis 8.2.2**: Cache compartilhado com databases separados por app
+- ✅ **n8n 1.114.4**: HTTPS + TLS automático + PostgreSQL + Redis cache
+- ✅ **Grafana 12.2**: Monitoramento + HTTPS + PostgreSQL + auto-scaling
+- ✅ **GLPI 11.0.1**: Helpdesk + MariaDB + Redis cache + HTTPS (NOVO!)
+- ✅ **cert-manager v1.19.0**: Certificados auto-renováveis
+- ✅ **Sistema de Backup**: PostgreSQL + MariaDB + PVCs com persistência real
+- ✅ **Namespaces Organizados**: postgres, mariadb, redis, n8n, grafana, glpi, cert-manager
+- ✅ **Permissões Configuradas**: fsGroup correto para todos os componentes
 - ✅ **TRUE PaaS BEHAVIOR**: Dados sobrevivem à destruição/recriação do cluster
 
 ## 🌐 **Pontos de Acesso**
 
-| Serviço        | URL                                           | Porta | Tipo      |
-| -------------- | --------------------------------------------- | ----- | --------- |
-| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443`     | 8443  | HTTPS/TLS |
-| **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
-| **PostgreSQL** | `localhost:30432`                             | 30432 | NodePort  |
-| **Redis**      | `redis.redis.svc.cluster.local:6379`          | 6379  | ClusterIP |
+| Serviço        | URL/Endpoint                         | Porta | Tipo      |
+| -------------- | ------------------------------------ | ----- | --------- |
+| **n8n**        | `https://n8n.brioit.local:8443`      | 8443  | HTTPS/TLS |
+| **Grafana**    | `https://grafana.brioit.local:8443`  | 8443  | HTTPS/TLS |
+| **GLPI**       | `https://glpi.brioit.local:8443`     | 8443  | HTTPS/TLS |
+| **PostgreSQL** | `localhost:30432`                    | 30432 | NodePort  |
+| **MariaDB**    | `localhost:30306`                    | 30306 | NodePort  |
+| **Redis**      | `redis.redis.svc.cluster.local:6379` | 6379  | ClusterIP |
 
 > ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
@@ -63,13 +68,21 @@
 
 ```
 /home/dsm/cluster/
-├── postgresql/data/        # PostgreSQL database
-├── redis/data/             # Redis cache
-├── n8n/data/              # n8n workflows
-├── n8n/user-data/         # n8n user files
-├── grafana/data/          # Grafana dashboards
-└── grafana/plugins-dashboards/  # Grafana plugins
+├── postgresql/data/              # PostgreSQL databases (N8N + Grafana)
+├── mariadb/                      # MariaDB database (GLPI) - fsGroup: 999
+├── redis/data/                   # Redis cache (compartilhado)
+├── applications/
+│   ├── n8n/data/                # n8n workflows - fsGroup: 1001
+│   ├── n8n/user-data/           # n8n user files
+│   ├── grafana/data/            # Grafana dashboards - fsGroup: 472
+│   ├── grafana/plugins-dashboards/  # Grafana plugins
+│   └── glpi/                    # GLPI data, config, files - fsGroup: 1000
+│       ├── data/                # Dados principais
+│       ├── config/              # Configurações
+│       └── files/               # Uploads e anexos
 ```
+
+> ⚠️ **Permissões Importantes**: Cada aplicação possui fsGroup específico configurado no deployment para garantir acesso correto aos volumes persistentes.
 
 ## �📋 Sumário
 
@@ -85,6 +98,51 @@
 - [Solução de Problemas](#-solução-de-problemas)
 - [Deploy para Produção](#-deploy-para-produção)
 - [Contribuindo](#-contribuindo-e-fork-do-projeto)
+
+## 🏗️ **Arquitetura Dual-Database**
+
+Este projeto implementa uma **arquitetura dual-database** otimizada para diferentes necessidades:
+
+### **📊 PostgreSQL 16** (Aplicações Avançadas)
+
+- **N8N**: Workflows complexos, JSON fields, extensões
+- **Grafana**: Dashboards, alertas, configurações avançadas
+- **Recursos**: JSONB, arrays, extensões, performance otimizada
+
+### **🗄️ MariaDB 12.0.2** (Aplicações Tradicionais)
+
+- **GLPI**: Compatibilidade oficial MySQL/MariaDB
+- **Recursos**: Transações ACID, relações tradicionais, compatibilidade
+
+### **⚡ Redis 8.2.2** (Cache Compartilhado)
+
+- **Database 0**: N8N cache e sessões
+- **Database 1**: Grafana cache
+- **Database 2**: GLPI cache e sessões
+
+> 💡 **Vantagem**: Cada aplicação usa o banco ideal para suas necessidades, mantendo performance e compatibilidade máximas.
+
+## 🔐 **Permissões e Segurança**
+
+### **Configuração de fsGroup por Aplicação**
+
+| Aplicação      | fsGroup | Proprietário Pasta          | Localização                               |
+| -------------- | ------- | --------------------------- | ----------------------------------------- |
+| **PostgreSQL** | 999     | `postgres:postgres`         | `/home/dsm/cluster/postgresql/`           |
+| **MariaDB**    | 999     | `systemd-coredump:ssh_keys` | `/home/dsm/cluster/mariadb/`              |
+| **N8N**        | 1001    | `n8n:n8n`                   | `/home/dsm/cluster/applications/n8n/`     |
+| **Grafana**    | 472     | `grafana:grafana`           | `/home/dsm/cluster/applications/grafana/` |
+| **GLPI**       | 1000    | `dsm:dsm`                   | `/home/dsm/cluster/applications/glpi/`    |
+| **Redis**      | -       | `redis:redis`               | `/home/dsm/cluster/redis/`                |
+
+### **🛡️ Segurança de Credenciais**
+
+- **`.gitignore`**: Padrões configurados para proteger secrets
+- **Templates**: Arquivos `.template` para configuração segura
+- **Secrets K8s**: Credenciais gerenciadas via Kubernetes secrets
+- **Volumes**: Permissões específicas por aplicação
+
+> ⚠️ **IMPORTANTE**: Sempre verifique as permissões das pastas `/home/dsm/cluster/` antes do primeiro deploy!
 
 ## � Pré-requisitos
 
@@ -441,12 +499,14 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 
 ### **📦 Aplicações Implementadas**
 
-| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | � **Login**               | �📖 **Documentação**                       |
+| 🛠️ **Aplicação** | 📝 **Descrição**           | 🌐 **Acesso**                                        | 🔑 **Login**              | 📖 **Documentação**                        |
 | ---------------- | -------------------------- | ---------------------------------------------------- | ------------------------- | ------------------------------------------ |
 | **n8n**          | Automação de workflows     | https://n8n.local.127.0.0.1.nip.io:8443              | Setup inicial             | **[README-N8N.md](README-N8N.md)**         |
 | **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | admin / admin             | **[README-GRAFANA.md](README-GRAFANA.md)** |
-| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n performance                 |
-| **PostgreSQL**   | Banco de dados             | Interno (`postgres.postgres.svc.cluster.local:5432`) | postgres / postgres_admin | **[README-INFRA.md](README-INFRA.md)**     |
+| **GLPI**         | Service Desk e ITSM        | https://glpi.local.127.0.0.1.nip.io:8443             | glpi / glpi               | Sistema de help desk                       |
+| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n/grafana/glpi                |
+| **PostgreSQL**   | Banco de dados (N8N/Graf.) | Interno (`postgres.postgres.svc.cluster.local:5432`) | postgres / postgres_admin | **[README-INFRA.md](README-INFRA.md)**     |
+| **MariaDB**      | Banco de dados (GLPI)      | Interno (`mariadb.mariadb.svc.cluster.local:3306`)   | mariadb_admin / \*\*\*    | Base de dados para GLPI                    |
 
 ### **🔄 Adicionando Novas Aplicações**
 
@@ -462,8 +522,10 @@ cp -r k8s/apps/n8n/* k8s/apps/NOVA_APP/
 
 - **✅ n8n**: Automação de workflows (implementado)
 - **✅ Grafana**: Dashboards e monitoring (implementado)
+- **✅ GLPI**: Service Desk e ITSM (implementado)
 - **✅ Redis**: Cache e sessões (implementado)
-- **✅ PostgreSQL**: Base de dados com persistência hostPath (implementado)
+- **✅ PostgreSQL**: Base de dados para n8n/grafana (implementado)
+- **✅ MariaDB**: Base de dados para GLPI (implementado)
 - **🔄 MinIO**: Object storage S3-compatible (planejado)
 - **🔄 Prometheus**: Métricas detalhadas (planejado)
 
@@ -675,10 +737,13 @@ kubectl get pods -n redis              # Status do Redis
 
 ### **🌐 Acesso às Aplicações:**
 
-| Serviço        | URL                                       | Credenciais                              |
-| -------------- | ----------------------------------------- | ---------------------------------------- |
-| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443` | Configurar no primeiro acesso            |
-| **PostgreSQL** | `localhost:30432`                         | user: `admin`, senha: definida no secret |
+| Serviço        | URL                                           | Credenciais                              |
+| -------------- | --------------------------------------------- | ---------------------------------------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443`     | Configurar no primeiro acesso            |
+| **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443` | admin / admin                            |
+| **GLPI**       | `https://glpi.local.127.0.0.1.nip.io:8443`    | glpi / glpi                              |
+| **PostgreSQL** | `localhost:30432`                             | user: `admin`, senha: definida no secret |
+| **MariaDB**    | `localhost:30306`                             | user: `mariadb_admin`, senha: no secret  |
 
 ### **� Configuração da Porta 8443**
 

@@ -34,11 +34,33 @@ temp/
 **/secret-*.yaml
 **/secret-*.yml
 
+# Padrões abrangentes para secrets
+**/*-secret.yaml
+**/*-secret.yml
+**/*_secret.yaml
+**/*_secret.yml
+**/secret.yaml
+**/secret.yml
+
 # Secrets específicos do projeto
 postgres-secret-admin.yaml
 n8n-secret-db.yaml
+grafana-secret-db.yaml
+glpi-secret-db.yaml
+mariadb-secret-admin.yaml
+mariadb-secret.yaml
+glpi-mariadb-secret.yaml
+redis-secret.yaml
+
+# Secrets por diretório
 infra/postgres/postgres-secret-admin.yaml
+infra/mariadb/mariadb-secret-admin.yaml
+infra/redis/redis-secret.yaml
 k8s/apps/n8n/n8n-secret-db.yaml
+k8s/apps/grafana/grafana-secret-db.yaml
+k8s/apps/glpi/glpi-secret-db.yaml
+k8s/apps/glpi/mariadb-secret.yaml
+k8s/apps/glpi/glpi-mariadb-secret.yaml
 
 # Excluir secrets mas manter templates/exemplos
 !**/secrets/template/
@@ -367,7 +389,20 @@ Icon?
 #   (que está fora do repositório)
 #
 # ==================================================================
+# Últimas Atualizações - Janeiro 2025
+# ==================================================================
+
+# Adicionados secrets específicos do GLPI/MariaDB
+infra/mariadb/mariadb-secret-admin.yaml
+k8s/apps/glpi/glpi-secret-db.yaml
+k8s/apps/glpi/mariadb-secret.yaml
+k8s/apps/glpi/glpi-mariadb-secret.yaml
+
+# Mantidos secrets existentes
 infra/postgres/postgres-secret-admin.yaml
 k8s/apps/n8n/n8n-secret-db.yaml
 k8s/apps/n8n/redis-secret.yaml
 k8s/apps/grafana/grafana-secret-db.yaml
+
+# Scripts de setup de hosts
+k8s/apps/*/scripts/*setup-hosts*.sh

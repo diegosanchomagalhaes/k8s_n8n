@@ -1,0 +1,19 @@
+# GLPI TLS Certificate
+# Certificado SSL/TLS para acesso HTTPS seguro
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: glpi-tls-cert
+  namespace: glpi
+  labels:
+    app: glpi
+spec:
+  secretName: glpi-tls-secret
+  issuerRef:
+    name: k3d-selfsigned
+    kind: ClusterIssuer
+  dnsNames:
+    - glpi.local.127.0.0.1.nip.io
+  usages:
+    - digital signature
+    - key encipherment

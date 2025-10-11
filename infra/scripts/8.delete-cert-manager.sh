@@ -12,6 +12,6 @@ echo "======== Removendo cert-manager ========"
 kubectl delete -f infra/cert-manager/cluster-issuer-selfsigned.yaml --ignore-not-found
 
 # cert-manager completo (método oficial)
-kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml --ignore-not-found
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.0/cert-manager.yaml --ignore-not-found
 
 echo "======== cert-manager removido ========"

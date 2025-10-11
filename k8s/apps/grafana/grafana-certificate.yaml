@@ -1,13 +1,8 @@
-# Grafana TLS Certificate
-# Certificado automático via cert-manager para HTTPS
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: grafana-tls
   namespace: grafana
-  labels:
-    app: grafana
-    component: tls
 spec:
   secretName: grafana-tls
   issuerRef:

@@ -51,7 +51,7 @@ A infraestrutura base é composta por:
 
 ### � Redis
 
-- **Versão**: Redis 8.2.1
+- **Versão**: Redis 8.2.2
 - **Namespace**: `redis`
 - **Service**: `redis.redis.svc.cluster.local:6379`
 - **Tipo**: Deployment com PersistentVolumeClaim
@@ -66,7 +66,7 @@ A infraestrutura base é composta por:
 
 ### �🔐 cert-manager
 
-- **Versão**: v1.18.2
+- **Versão**: v1.19.0
 - **Namespace**: `cert-manager`
 - **Issuer**: `k3d-selfsigned` (ClusterIssuer)
 - **Função**: Geração automática de certificados TLS para desenvolvimento

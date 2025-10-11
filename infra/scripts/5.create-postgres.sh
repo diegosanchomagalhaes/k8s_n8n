@@ -17,8 +17,11 @@ kubectl apply -f infra/postgres/postgres-pv-hostpath.yaml
 echo "[2.5/4] Aplicando PVC..."
 kubectl apply -f infra/postgres/postgres-pvc.yaml
 
-echo "[3/4] Aplicando Secret admin..."
-kubectl apply -f infra/postgres/postgres-secret-admin.yaml
+echo "[3/4] Criando Secret admin dinamicamente..."
+kubectl create secret generic postgres-admin-secret \
+  --from-literal=postgres-password=postgres_admin \
+  --namespace=postgres \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 echo "[4/4] Aguardando PostgreSQL ficar pronto..."
 kubectl rollout status statefulset/postgres -n postgres

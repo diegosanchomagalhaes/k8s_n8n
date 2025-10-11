@@ -1,0 +1,63 @@
+# GLPI PVs - Persistent Volumes para dados específicos da aplicação
+# Estrutura: /mnt/cluster/applications/glpi/
+# Dados de banco ficam separados: PostgreSQL + Redis
+
+# PV para dados do GLPI (/var/www/html/glpi)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glpi-pv-hostpath
+  labels:
+    app: glpi
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/glpi/data
+    type: DirectoryOrCreate
+---
+# PV para configurações do GLPI
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glpi-config-pv-hostpath
+  labels:
+    app: glpi
+    component: config
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/glpi/config
+    type: DirectoryOrCreate
+---
+# PV adicional para arquivos do GLPI
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glpi-files-pv-hostpath
+  labels:
+    app: glpi
+    component: files
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/applications/glpi/files
+    type: DirectoryOrCreate

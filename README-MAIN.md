@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-8.2.1-red)](https://redis.io/)
+[![Redis](https://img.shields.io/badge/Redis-8.2.2-red)](https://redis.io/)
 [![n8n](https://img.shields.io/badge/n8n-1.114.4-orange)](https://n8n.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-12.2-orange)](https://grafana.com/)
 [![Backup System](https://img.shields.io/badge/Backup-Automated-green)](./backup/README.md)
@@ -57,7 +57,7 @@ nano k8s/apps/grafana/grafana-secret-db.yaml       # Grafana database
 - **n8n 1.114.4**: https://n8n.local.127.0.0.1.nip.io:8443 (Configure primeiro usuário)
 - **Grafana 12.2**: https://grafana.local.127.0.0.1.nip.io:8443 (admin/admin)
 - **PostgreSQL 16**: localhost:30432 (credenciais no secret)
-- **Redis 8.2.1**: redis.redis.svc.cluster.local:6379 (cache habilitado para n8n)
+- **Redis 8.2.2**: redis.redis.svc.cluster.local:6379 (cache habilitado para n8n)
 
 ---
 
@@ -119,7 +119,7 @@ k8s_local/
 | ---------------- | -------- | ------------------------ | ----------------- |
 | **k3d**          | 5.8.3    | Cluster Kubernetes local | `kubectl`         |
 | **PostgreSQL**   | 16       | Database persistente     | `localhost:30432` |
-| **Redis**        | 8.2.1    | Cache e sessões          | Interno (cluster) |
+| **Redis**        | 8.2.2    | Cache e sessões          | Interno (cluster) |
 | **n8n**          | 1.114.4  | Automação workflows      | HTTPS `:8443`     |
 | **Grafana**      | 12.2     | Dashboards e monitoring  | HTTPS `:8443`     |
 | **Traefik**      | Built-in | Ingress Controller       | HTTP/HTTPS        |

@@ -1,0 +1,22 @@
+# MariaDB PVC - Persistent Volume Claim
+# Requisição de armazenamento para dados do MariaDB
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-pvc
+  namespace: mariadb
+  labels:
+    app: mariadb
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: mariadb
+      component: storage
+      storage-type: hostpath
+  resources:
+    requests:
+      storage: 20Gi

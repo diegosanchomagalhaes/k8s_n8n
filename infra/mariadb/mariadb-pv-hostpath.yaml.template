@@ -1,0 +1,20 @@
+# MariaDB PersistentVolume com hostPath para persistência real
+# Template: Substitua [CLUSTER_BASE_PATH] pelo seu path base
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mariadb-pv-hostpath
+  labels:
+    app: mariadb
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: [CLUSTER_BASE_PATH]/mariadb/data
+    type: DirectoryOrCreate

@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: glpi
+  namespace: glpi
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - glpi.local.127.0.0.1.nip.io
+      secretName: glpi-tls-secret
+  rules:
+    - host: glpi.local.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: glpi
+                port:
+                  number: 8090

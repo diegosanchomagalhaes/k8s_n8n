@@ -16,36 +16,25 @@ echo "📁 Diretório do projeto: $PROJECT_ROOT"
 cd "$PROJECT_ROOT"
 
 # =================================================================
-# 1. VERIFICAR CONFIGURAÇÃO DE CREDENCIAIS
+# 1. VERIFICAR PRÉ-REQUISITOS
 # =================================================================
-echo "🔐 Verificando configuração de credenciais..."
+echo "� Verificando pré-requisitos..."
 
-# Verificar se os arquivos de secrets existem
-if [ ! -f "infra/postgres/postgres-secret-admin.yaml" ]; then
-    echo "❌ ERRO: Arquivo postgres-secret-admin.yaml não encontrado!"
-    echo ""
-    echo "📝 Configure as credenciais primeiro:"
-    echo "   cd $PROJECT_ROOT"
-    echo "   cp infra/postgres/postgres-secret-admin.yaml.template \\"
-    echo "      infra/postgres/postgres-secret-admin.yaml"
-    echo ""
-    echo "   Depois edite o arquivo e substitua YOUR_POSTGRES_ADMIN_PASSWORD_HERE"
-    echo ""
-    echo "📖 Veja detalhes em: README-SECURITY.md"
+# Verificar se k3d está instalado
+if ! command -v k3d &> /dev/null; then
+    echo "❌ ERRO: k3d não está instalado!"
+    echo "📝 Instale k3d: https://k3d.io/v5.7.4/#installation"
     exit 1
 fi
 
-# Verificar se ainda contém placeholders
-if grep -q "YOUR_POSTGRES_ADMIN_PASSWORD_HERE" infra/postgres/postgres-secret-admin.yaml; then
-    echo "❌ ERRO: Senha não configurada em postgres-secret-admin.yaml"
-    echo ""
-    echo "📝 Edite o arquivo e substitua YOUR_POSTGRES_ADMIN_PASSWORD_HERE por uma senha real"
-    echo "💡 Sugestão de senha segura: openssl rand -base64 24"
-    echo ""
+# Verificar se kubectl está instalado  
+if ! command -v kubectl &> /dev/null; then
+    echo "❌ ERRO: kubectl não está instalado!"
+    echo "📝 Instale kubectl: https://kubernetes.io/docs/tasks/tools/"
     exit 1
 fi
 
-echo "✅ Credenciais configuradas corretamente!"
+echo "✅ Pré-requisitos atendidos!"
 
 # =================================================================
 # 1.5. PREPARAR ESTRUTURA DE DIRETÓRIOS
@@ -69,14 +58,18 @@ if ! k3d cluster list k3d-cluster 2>/dev/null | grep -q "running"; then
     echo "🗄️ Configurando PostgreSQL..."
     "$PROJECT_ROOT/infra/scripts/5.create-postgres.sh"
     
-    echo "� Configurando Redis..."
+    echo "🗂️ Configurando MariaDB..."
+    "$PROJECT_ROOT/infra/scripts/16.create-mariadb.sh"
+    
+    echo "🔴 Configurando Redis..."
     "$PROJECT_ROOT/infra/scripts/11.create-redis.sh"
     
-    echo "�🔒 Configurando cert-manager..."
+    echo "🔒 Configurando cert-manager..."
     "$PROJECT_ROOT/infra/scripts/7.create-cert-manager.sh"
     
     echo "⏳ Aguardando infraestrutura ficar pronta..."
     kubectl wait --for=condition=ready pod -l app=postgres -n postgres --timeout=300s
+    kubectl wait --for=condition=ready pod -l app=mariadb -n mariadb --timeout=300s
     kubectl wait --for=condition=ready pod -l app=redis -n redis --timeout=300s
     kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=cert-manager -n cert-manager --timeout=300s
 else
@@ -89,6 +82,15 @@ else
         kubectl wait --for=condition=ready pod -l app=postgres -n postgres --timeout=180s
     else
         echo "✅ PostgreSQL já está rodando!"
+    fi
+    
+    # Verificar se MariaDB está rodando
+    if ! kubectl get pods -n mariadb 2>/dev/null | grep -q "mariadb.*Running"; then
+        echo "🗂️ Iniciando MariaDB..."
+        "$PROJECT_ROOT/infra/scripts/16.create-mariadb.sh"
+        kubectl wait --for=condition=ready pod -l app=mariadb -n mariadb --timeout=180s
+    else
+        echo "✅ MariaDB já está rodando!"
     fi
     
     # Verificar se Redis está rodando
@@ -116,11 +118,13 @@ echo ""
 echo "📦 Componentes disponíveis:"
 echo "   - k3d cluster: k3d-cluster (hostPath: /home/dsm/cluster:/mnt/cluster)"
 echo "   - PostgreSQL: postgres.postgres.svc.cluster.local:5432"
+echo "   - MariaDB: mariadb.mariadb.svc.cluster.local:3306"
 echo "   - Redis: redis.redis.svc.cluster.local:6379" 
 echo "   - cert-manager: ClusterIssuer k3d-selfsigned"
 echo ""
 echo "💾 Dados persistentes em:"
 echo "   - PostgreSQL: /home/dsm/cluster/postgresql/"
+echo "   - MariaDB: /home/dsm/cluster/mariadb/"
 echo "   - Redis: /home/dsm/cluster/redis/"
 echo "   - Aplicações: /home/dsm/cluster/applications/"
 echo ""

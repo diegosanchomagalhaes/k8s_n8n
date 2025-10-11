@@ -23,7 +23,7 @@
 - **Versão**: n8n 1.114.4
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
-- **Cache**: Redis 8.2.1 (performance otimizada)
+- **Cache**: Redis 8.2.2 (performance otimizada)
 - **Persistência**: hostPath em `/home/dsm/cluster/pvc/n8n` (TRUE PaaS)
 - **Acesso**: HTTPS via Traefik Ingress
 - **Scaling**: HPA (Horizontal Pod Autoscaler)

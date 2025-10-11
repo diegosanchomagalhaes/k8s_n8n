@@ -1,0 +1,21 @@
+# MariaDB PV - Persistent Volume com hostPath para persistência real
+# Define ONDE os dados ficam armazenados no host físico
+# Contém database: mariadb (admin), glpi
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mariadb-pv-hostpath
+  labels:
+    app: mariadb
+    component: storage
+    storage-type: hostpath
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: hostpath-storage
+  hostPath:
+    path: /mnt/cluster/mariadb
+    type: DirectoryOrCreate

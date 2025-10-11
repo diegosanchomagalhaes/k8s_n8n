@@ -1,0 +1,17 @@
+# MariaDB PVC - Using k3d default local-path storage class
+# This provides automatic local storage management on Linux
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-pvc
+  namespace: mariadb
+  labels:
+    app: mariadb
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path # k3d default storage class
+  resources:
+    requests:
+      storage: 20Gi

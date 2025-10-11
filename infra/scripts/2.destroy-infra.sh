@@ -15,26 +15,31 @@ echo "======== [1/4] Removendo aplicações (se ainda existirem) ========"
 kubectl delete namespace n8n --ignore-not-found
 kubectl delete namespace grafana --ignore-not-found
 
-echo "======== [2/4] Removendo PostgreSQL ========"
+echo "======== [2/5] Removendo PostgreSQL ========"
 kubectl delete -f infra/postgres/postgres.yaml --ignore-not-found
 kubectl delete -f infra/postgres/postgres-secret-admin.yaml --ignore-not-found
 echo "💾 MANTENDO: PVs e PVCs PostgreSQL (dados preservados)"
 
-echo "======== [3/4] Removendo Redis ========"
+echo "======== [3/5] Removendo MariaDB ========"
+kubectl delete -f infra/mariadb/mariadb-deployment.yaml --ignore-not-found
+kubectl delete -f infra/mariadb/mariadb-secret-admin.yaml --ignore-not-found
+echo "💾 MANTENDO: PVs e PVCs MariaDB (dados preservados)"
+
+echo "======== [4/5] Removendo Redis ========"
 kubectl delete -f infra/redis/redis.yaml --ignore-not-found
 kubectl delete -f infra/redis/redis-secret.yaml --ignore-not-found
 echo "💾 MANTENDO: PVs e PVCs Redis (dados preservados)"
 
-echo "======== [4/4] Removendo cert-manager ========"
+echo "======== [5/5] Removendo cert-manager ========"
 # Remover ClusterIssuer primeiro
 kubectl delete -f infra/cert-manager/cluster-issuer-selfsigned.yaml --ignore-not-found
 # Remover namespace cert-manager (isso remove tudo dentro)
 kubectl delete namespace cert-manager --ignore-not-found
 # Remover CRDs e recursos globais do cert-manager
 echo "🗑️  Removendo cert-manager..."
-kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml --ignore-not-found
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.0/cert-manager.yaml --ignore-not-found
 
-echo "======== [5/5] Removendo cluster k3d ========"
+echo "======== [6/6] Removendo cluster k3d ========"
 # Remove o cluster mas dados hostPath são preservados
 k3d cluster delete k3d-cluster
 
@@ -42,9 +47,11 @@ echo ""
 echo "🎉 Infraestrutura base removida!"
 echo "💾 DADOS PRESERVADOS em:"
 echo "   📁 /home/dsm/cluster/postgresql (databases: postgres, n8n, grafana)"
-echo "   📁 /home/dsm/cluster/redis (cache: db0=n8n, db1=grafana)" 
+echo "   📁 /home/dsm/cluster/mariadb (database: glpi)"
+echo "   📁 /home/dsm/cluster/redis (cache: db0=n8n, db1=grafana, db2=glpi)" 
 echo "   📁 /home/dsm/cluster/applications/n8n/ (configurações e arquivos)"
 echo "   📁 /home/dsm/cluster/applications/grafana/ (dados e logs)"
+echo "   📁 /home/dsm/cluster/applications/glpi/ (dados e logs)"
 echo ""
 echo "💡 Para recriar tudo:"
 echo "   ./start-all.sh                    # Infraestrutura + aplicações"

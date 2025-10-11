@@ -1,0 +1,59 @@
+# GLPI Persistent Volumes Template - hostPath
+# Volumes para dados persistentes do GLPI no sistema de arquivos do host
+# IMPORTANTE: Altere os caminhos conforme sua estrutura de diretórios
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glpi-data-pv
+  labels:
+    app: glpi
+    type: data
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /mnt/cluster/applications/glpi/data
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glpi-config-pv
+  labels:
+    app: glpi
+    type: config
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /mnt/cluster/applications/glpi/config
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glpi-files-pv
+  labels:
+    app: glpi
+    type: files
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /mnt/cluster/applications/glpi/files
+    type: DirectoryOrCreate

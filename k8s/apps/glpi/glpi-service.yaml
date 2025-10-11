@@ -1,0 +1,19 @@
+# GLPI Service
+# Service para exposição interna do GLPI
+apiVersion: v1
+kind: Service
+metadata:
+  name: glpi
+  namespace: glpi
+  labels:
+    app: glpi
+    component: monitoring
+spec:
+  selector:
+    app: glpi
+  ports:
+    - name: glpi
+      port: 8090
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP

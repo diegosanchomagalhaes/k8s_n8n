@@ -1,0 +1,65 @@
+# GLPI PVCs - Persistent Volume Claims
+# Define COMO as aplicações solicitam armazenamento
+# Vincula-se aos PVs através dos seletores (labels)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: glpi-pvc
+  namespace: glpi
+  labels:
+    app: glpi
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: glpi
+      component: storage
+      storage-type: hostpath
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: glpi-config-pvc
+  namespace: glpi
+  labels:
+    app: glpi
+    component: config
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: glpi
+      component: config
+      storage-type: hostpath
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: glpi-files-pvc
+  namespace: glpi
+  labels:
+    app: glpi
+    component: files
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: hostpath-storage
+  selector:
+    matchLabels:
+      app: glpi
+      component: files
+      storage-type: hostpath
+  resources:
+    requests:
+      storage: 10Gi

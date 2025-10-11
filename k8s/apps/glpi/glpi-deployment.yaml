@@ -1,0 +1,203 @@
+# GLPI Deployment
+# Deployment principal do GLPI com MariaDB e configurações de segurança
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glpi
+  namespace: glpi
+  labels:
+    app: glpi
+    component: helpdesk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glpi
+  template:
+    metadata:
+      labels:
+        app: glpi
+        component: helpdesk
+    spec:
+      securityContext:
+        fsGroup: 1000
+
+      # Init containers para configuração e permissões
+      initContainers:
+        - name: create-database
+          image: mariadb:12.0.2
+          env:
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_HOST
+            - name: MYSQL_TCP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_PORT
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_USER
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_PASSWORD
+            - name: MYSQL_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_ROOT_USER
+            - name: MYSQL_ROOT_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_ROOT_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MariaDB to be ready..."
+              until mariadb -h $MYSQL_HOST -P $MYSQL_TCP_PORT -u $MYSQL_USER -p$MYSQL_PWD -e "SELECT 1" >/dev/null 2>&1; do
+                echo "Waiting for database connection..."
+                sleep 2
+              done
+              echo "MariaDB is ready!"
+
+              echo "Creating database 'glpi' if it doesn't exist..."
+              mariadb -h $MYSQL_HOST -P $MYSQL_TCP_PORT -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PWD -e "CREATE DATABASE IF NOT EXISTS glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              echo "Database setup complete!"
+
+        - name: fix-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Fixing permissions for GLPI directories..."
+              chown -R 1000:1000 /var/glpi /etc/glpi /var/www/html/glpi/files
+              chmod -R 755 /var/glpi /etc/glpi /var/www/html/glpi/files
+              echo "Permissions fixed!"
+          volumeMounts:
+            - name: glpi-data
+              mountPath: /var/glpi
+            - name: glpi-config
+              mountPath: /etc/glpi
+            - name: glpi-files
+              mountPath: /var/www/html/glpi/files
+
+      containers:
+        - name: glpi
+          image: glpi/glpi:11.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              protocol: TCP
+
+          env:
+            # Database Configuration - MySQL/MariaDB
+            - name: GLPI_DB_ENGINE
+              value: "mysql"
+            - name: GLPI_DB_HOST
+              value: "mariadb.mariadb.svc.cluster.local"
+            - name: GLPI_DB_PORT
+              value: "3306"
+            - name: GLPI_DB_NAME
+              value: "glpi"
+            - name: GLPI_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_USER
+            - name: GLPI_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: MARIADB_PASSWORD
+
+            # Redis Configuration (para cache e sessões)
+            - name: GLPI_CACHE_REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: REDIS_HOST
+            - name: GLPI_CACHE_REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: REDIS_PORT
+            - name: GLPI_CACHE_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: REDIS_PASSWORD
+            - name: GLPI_CACHE_REDIS_DB
+              valueFrom:
+                secretKeyRef:
+                  name: glpi-db-secret
+                  key: REDIS_DB
+
+            # GLPI Specific Configuration
+            - name: GLPI_ENVIRONMENT_TYPE
+              value: "development"
+            - name: GLPI_INSTALL
+              value: "true"
+            - name: GLPI_UPDATE
+              value: "true"
+            - name: GLPI_REMOVE_INSTALLER
+              value: "false"
+            - name: TZ
+              value: "America/Sao_Paulo"
+
+          volumeMounts:
+            - name: glpi-data
+              mountPath: /var/glpi
+            - name: glpi-config
+              mountPath: /etc/glpi
+            - name: glpi-files
+              mountPath: /var/www/html/glpi/files
+
+          # Health checks - usando raiz que funciona antes da configuração
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          # Resource limits
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+
+      volumes:
+        - name: glpi-data
+          persistentVolumeClaim:
+            claimName: glpi-pvc
+        - name: glpi-config
+          persistentVolumeClaim:
+            claimName: glpi-config-pvc
+        - name: glpi-files
+          persistentVolumeClaim:
+            claimName: glpi-files-pvc
+
+      restartPolicy: Always
