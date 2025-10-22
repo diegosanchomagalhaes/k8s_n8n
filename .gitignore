@@ -51,6 +51,7 @@ mariadb-secret-admin.yaml
 mariadb-secret.yaml
 glpi-mariadb-secret.yaml
 redis-secret.yaml
+prometheus-secret-db.yaml
 
 # Secrets por diretório
 infra/postgres/postgres-secret-admin.yaml
@@ -61,6 +62,7 @@ k8s/apps/grafana/grafana-secret-db.yaml
 k8s/apps/glpi/glpi-secret-db.yaml
 k8s/apps/glpi/mariadb-secret.yaml
 k8s/apps/glpi/glpi-mariadb-secret.yaml
+k8s/apps/prometheus/prometheus-secret-db.yaml
 
 # Excluir secrets mas manter templates/exemplos
 !**/secrets/template/
