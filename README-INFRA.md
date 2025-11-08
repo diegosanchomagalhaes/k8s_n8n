@@ -49,20 +49,50 @@ A infraestrutura base é composta por:
   - CPU: 100m (request) / 500m (limit)
   - Memória: 256Mi (request) / 1Gi (limit)
 
-### � Redis
+### 🔴 Redis
 
-- **Versão**: Redis 8.2.2
+- **Versão**: Redis 8.2.3
 - **Namespace**: `redis`
 - **Service**: `redis.redis.svc.cluster.local:6379`
 - **Tipo**: Deployment com PersistentVolumeClaim
-- **Função**: Cache backend para n8n (performance)
-- **Storage**: local-path StorageClass (5Gi)
+- **Função**: Cache backend compartilhado para todas as aplicações
+- **Storage**: hostPath (`/home/dsm/cluster/redis` → `/mnt/cluster/redis`)
 - **Autenticação**: Password protegido via Secret
-- **Configuração n8n**:
-  - `N8N_CACHE_BACKEND`: "redis"
-  - `QUEUE_BULL_REDIS_HOST`: redis.redis.svc.cluster.local
-  - `QUEUE_BULL_REDIS_PORT`: 6379
-  - `QUEUE_BULL_REDIS_DB`: 0
+
+#### **Distribuição de Databases Redis:**
+
+| Database | Aplicação  | Uso                          | Variável de Ambiente    |
+| -------- | ---------- | ---------------------------- | ----------------------- |
+| **DB 0** | N8N        | Filas (Bull Queue)           | `QUEUE_BULL_REDIS_DB=0` |
+| **DB 1** | Grafana    | Cache e Sessões              | `GF_DATABASE_CACHE_*`   |
+| **DB 2** | GLPI       | Cache e Sessões              | `GLPI_CACHE_REDIS_DB=2` |
+| **DB 3** | Prometheus | Cache de Métricas (opcional) | `REDIS_DB=3`            |
+
+#### **Configuração por Aplicação:**
+
+**N8N:**
+
+```yaml
+N8N_CACHE_BACKEND: redis
+QUEUE_BULL_REDIS_HOST: redis.redis.svc.cluster.local
+QUEUE_BULL_REDIS_PORT: 6379
+QUEUE_BULL_REDIS_DB: 0 # ← Database 0
+```
+
+**Grafana:**
+
+```yaml
+GF_DATABASE_CACHE_TYPE: redis
+GF_DATABASE_CACHE_CONNSTR: redis.redis.svc.cluster.local:6379?db=1 # ← Database 1
+```
+
+**GLPI:**
+
+```yaml
+GLPI_CACHE_REDIS_HOST: redis.redis.svc.cluster.local
+GLPI_CACHE_REDIS_PORT: 6379
+GLPI_CACHE_REDIS_DB: 2 # ← Database 2
+```
 
 ### �🔐 cert-manager
 
@@ -81,22 +111,24 @@ A infraestrutura base é composta por:
 
 ### Scripts Principais (`infra/scripts/`)
 
-| Script                     | Descrição                     | Componentes                             |
-| -------------------------- | ----------------------------- | --------------------------------------- |
-| `10.start-infra.sh`        | **Setup completo automático** | k3d + PostgreSQL + Redis + cert-manager |
-| `2.destroy-infra.sh`       | **Destruir tudo**             | Remove cluster completo                 |
-| `3.create-cluster.sh`      | Criar apenas cluster          | k3d cluster                             |
-| `4.delete-cluster.sh`      | Deletar cluster               | Remove k3d                              |
-| `5.create-postgres.sh`     | PostgreSQL apenas             | StatefulSet + PV + Secret               |
-| `6.delete-postgres.sh`     | Remover PostgreSQL            | Cleanup DB                              |
-| `7.create-cert-manager.sh` | cert-manager apenas           | TLS management                          |
-| `8.delete-cert-manager.sh` | Remover cert-manager          | Remove certificates                     |
-| `9.setup-directories.sh`   | **Estrutura de diretórios**   | Organiza hostPath storage               |
-| `11.create-redis.sh`       | Redis cache                   | Deployment + PV + Secret                |
-| `12.delete-redis.sh`       | Remover Redis                 | Cleanup cache                           |
-| `13.configure-hostpath.sh` | Configurar templates PV       | Templates hostPath                      |
-| `14.clean-cluster-data.sh` | **Limpar dados persistentes** | Remove TODOS os dados hostPath          |
-| `15.test-persistence.sh`   | **Testar persistência**       | Destroy cluster + manter dados          |
+| Script                     | Descrição                      | Componentes                             |
+| -------------------------- | ------------------------------ | --------------------------------------- |
+| `10.start-infra.sh`        | **Setup completo automático**  | k3d + PostgreSQL + Redis + cert-manager |
+| `2.destroy-infra.sh`       | **Destruir tudo**              | Remove cluster completo                 |
+| `3.create-cluster.sh`      | Criar apenas cluster           | k3d cluster                             |
+| `4.delete-cluster.sh`      | Deletar cluster                | Remove k3d                              |
+| `5.create-postgres.sh`     | PostgreSQL apenas              | StatefulSet + PV + Secret               |
+| `6.delete-postgres.sh`     | Remover PostgreSQL             | Cleanup DB                              |
+| `7.create-cert-manager.sh` | cert-manager apenas            | TLS management                          |
+| `8.delete-cert-manager.sh` | Remover cert-manager           | Remove certificates                     |
+| `9.setup-directories.sh`   | **Estrutura de diretórios**    | Organiza hostPath storage               |
+| `11.create-redis.sh`       | Redis cache                    | Deployment + PV + Secret                |
+| `12.delete-redis.sh`       | Remover Redis                  | Cleanup cache                           |
+| `13.configure-hostpath.sh` | Configurar templates PV        | Templates hostPath                      |
+| `14.clean-cluster-data.sh` | **Limpar dados databases**     | Drop databases PostgreSQL/MariaDB       |
+| `15.clean-cluster-pvc.sh`  | **Limpar PVs/PVCs/filesystem** | Remove volumes e dados hostPath         |
+| `18.destroy-all.sh`        | **Destruição completa**        | Drop DBs → Destroy → Clean filesystem   |
+| `19.test-persistence.sh`   | **Testar persistência**        | Destroy cluster + manter dados          |
 
 ### Uso dos Scripts
 
@@ -107,9 +139,15 @@ A infraestrutura base é composta por:
 
 # 🗑️ Limpeza completa
 ./infra/scripts/2.destroy-infra.sh    # Remove cluster + limpeza total
+./infra/scripts/18.destroy-all.sh     # Drop DBs → Destroy cluster → Clean filesystem
+
+# 🧹 Limpeza por etapas
+./infra/scripts/14.clean-cluster-data.sh  # Drop databases (cluster rodando)
+./infra/scripts/2.destroy-infra.sh        # Destroy cluster
+./infra/scripts/15.clean-cluster-pvc.sh   # Limpar filesystem (cluster parado)
 
 # 🧪 Teste de persistência
-./infra/scripts/15.test-persistence.sh  # Testa que dados sobrevivem ao destroy
+./infra/scripts/19.test-persistence.sh  # Testa que dados sobrevivem ao destroy
 
 # 🔧 Componentes individuais
 ./infra/scripts/3.create-cluster.sh   # Somente k3d
@@ -138,7 +176,10 @@ ports:
   - port: 8443:443
     nodeFilters:
       - loadbalancer
-# volumes não necessários - usando local-path StorageClass
+volumes:
+  - volume: /home/dsm/cluster:/mnt/cluster
+    nodeFilters:
+      - all
 options:
   k3d:
     wait: true
@@ -157,8 +198,61 @@ options:
 
 - **Alta disponibilidade local**: 3 nodes (1 server + 2 agents)
 - **Load balancer integrado**: Traefik automático
-- **Volume compartilhado**: SSD NVMe para performance
+- **Volume compartilhado**: `/home/dsm/cluster` → `/mnt/cluster` (mapeamento hostPath)
 - **Networking**: Bridge network com port forwarding
+
+### Mapeamento de Volumes
+
+O cluster k3d mapeia o diretório do host para dentro dos nodes:
+
+```bash
+Host:       /home/dsm/cluster/*
+            ↓
+Container:  /mnt/cluster/*
+```
+
+**Estrutura de Diretórios:**
+
+```
+/home/dsm/cluster/
+├── postgresql/          # PostgreSQL data directory
+├── redis/               # Redis persistence (RDB snapshots)
+├── prometheus/          # Prometheus TSDB
+├── grafana/             # Grafana dashboards e plugins
+├── glpi/                # GLPI files e uploads
+├── mariadb/             # MariaDB data directory
+└── n8n/                 # N8N workflows e credenciais
+```
+
+**Como funciona:**
+
+1. **k3d cria o volume**: Ao iniciar o cluster, k3d monta `/home/dsm/cluster` em todos os nodes como `/mnt/cluster`
+2. **Pods acessam via hostPath**: Os Pods usam `hostPath: /mnt/cluster/<app>` nos volumes
+3. **Dados persistem no host**: Como o volume aponta para o host, os dados sobrevivem ao destroy/recreate do cluster
+
+**Exemplo de uso em PV:**
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/cluster/postgresql # ← Aponta para o volume mapeado no node
+    type: DirectoryOrCreate
+```
+
+**Vantagens:**
+
+- ✅ **Persistência real**: Dados sobrevivem a `k3d cluster delete`
+- ✅ **Backup facilitado**: Basta copiar `/home/dsm/cluster`
+- ✅ **Performance**: Acesso direto ao filesystem do host
+- ✅ **Transparência**: Fácil inspecionar dados com ferramentas do host
 
 ## 🐘 PostgreSQL
 

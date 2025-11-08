@@ -5,9 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-8.2.2-red)](https://redis.io/)
-[![n8n](https://img.shields.io/badge/n8n-1.114.4-orange)](https://n8n.io/)
-[![Grafana](https://img.shields.io/badge/Grafana-12.2-orange)](https://grafana.com/)
+[![Redis](https://img.shields.io/badge/Redis-8.2.3-red)](https://redis.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.118.2-orange)](https://n8n.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-12.2.1-orange)](https://grafana.com/)
 [![Backup System](https://img.shields.io/badge/Backup-Automated-green)](./backup/README.md)
 
 ## 📋 Sumário
@@ -27,37 +27,56 @@
 ### **⚡ Setup Completo em 1 Comando**
 
 ```bash
-# 🚀 Deploy completo (infraestrutura + aplicações)
+# 🚀 Deploy completo (infraestrutura + 4 aplicações)
 ./start-all.sh
 
 # OU deploy aplicações específicas:
 ./start-all.sh n8n                    # Infra + n8n
 ./start-all.sh grafana                # Infra + grafana
+./start-all.sh prometheus             # Infra + prometheus
+./start-all.sh glpi                   # Infra + glpi
 ```
 
 ### **⚙️ Configuração de Credenciais (primeira execução)**
 
 ```bash
-# 1. Copiar templates de configuração
+# 1. Copiar templates de configuração (infraestrutura)
 cp infra/postgres/postgres-secret-admin.yaml.template \
    infra/postgres/postgres-secret-admin.yaml
+cp infra/mariadb/mariadb-secret-admin.yaml.template \
+   infra/mariadb/mariadb-secret-admin.yaml
+cp infra/redis/redis-secret.yaml.template \
+   infra/redis/redis-secret.yaml
+
+# 2. Copiar templates de aplicações
 cp k8s/apps/n8n/n8n-secret-db.yaml.template \
    k8s/apps/n8n/n8n-secret-db.yaml
 cp k8s/apps/grafana/grafana-secret-db.yaml.template \
    k8s/apps/grafana/grafana-secret-db.yaml
+cp k8s/apps/prometheus/prometheus-secret-db.yaml.template \
+   k8s/apps/prometheus/prometheus-secret-db.yaml
+cp k8s/apps/glpi/glpi-secret-db.yaml.template \
+   k8s/apps/glpi/glpi-secret-db.yaml
 
-# 2. Editar e configurar credenciais reais
+# 3. Editar e configurar credenciais reais
 nano infra/postgres/postgres-secret-admin.yaml     # PostgreSQL admin
-nano k8s/apps/n8n/n8n-secret-db.yaml              # n8n database
-nano k8s/apps/grafana/grafana-secret-db.yaml       # Grafana database
+nano infra/mariadb/mariadb-secret-admin.yaml       # MariaDB admin
+nano infra/redis/redis-secret.yaml                 # Redis password
+nano k8s/apps/n8n/n8n-secret-db.yaml              # n8n (PG + Redis)
+nano k8s/apps/grafana/grafana-secret-db.yaml       # Grafana (PG + Redis)
+nano k8s/apps/prometheus/prometheus-secret-db.yaml # Prometheus (PG + Redis)
+nano k8s/apps/glpi/glpi-secret-db.yaml             # GLPI (MariaDB + Redis)
 ```
 
 ### **🌐 Acesso Rápido**
 
-- **n8n 1.114.4**: https://n8n.local.127.0.0.1.nip.io:8443 (Configure primeiro usuário)
-- **Grafana 12.2**: https://grafana.local.127.0.0.1.nip.io:8443 (admin/admin)
-- **PostgreSQL 16**: localhost:30432 (credenciais no secret)
-- **Redis 8.2.2**: redis.redis.svc.cluster.local:6379 (cache habilitado para n8n)
+- **n8n 1.118.2**: https://n8n.local.127.0.0.1.nip.io:8443 (Configure primeiro usuário)
+- **Grafana 12.2.1**: https://grafana.local.127.0.0.1.nip.io:8443 (admin/Admin_Grafana_2025_K8s_10243769)
+- **Prometheus v3.7.3**: https://prometheus.local.127.0.0.1.nip.io:8443
+- **GLPI 11.0.1**: https://glpi.local.127.0.0.1.nip.io:8443
+- **PostgreSQL 16**: localhost:30432 (databases: n8n, grafana, prometheus)
+- **MariaDB 12.0.2**: localhost:30306 (database: glpi)
+- **Redis 8.2.3**: redis.redis.svc.cluster.local:6379 (DB0=n8n, DB1=grafana, DB2=glpi, DB3=prometheus)
 
 ---
 
@@ -73,21 +92,31 @@ k8s_local/
 │   │   └── 2.destroy-infra.sh        # Limpeza (mantém dados)
 │   ├── k3d/                    # Configuração do cluster
 │   ├── postgres/               # PostgreSQL persistente
-│   ├── redis/                  # Redis cache (NOVO!)
+│   ├── mariadb/                # MariaDB para GLPI
+│   ├── redis/                  # Redis cache
 │   └── cert-manager/           # Certificados TLS
 ├── k8s/                        # 🚀 Aplicações Kubernetes
 │   └── apps/
 │       ├── n8n/                # Automação n8n
 │       │   ├── scripts/        # Deploy e manutenção
-│       │   │   ├── 3.start-n8n.sh         # Deploy aplicação
+│       │   │   ├── 1.deploy-n8n.sh        # Deploy aplicação
 │       │   │   ├── 2.destroy-n8n.sh       # Remove app (mantém dados)
-│       │   │   └── 4.drop-database-n8n.sh # Limpeza COMPLETA (NOVO!)
+│       │   │   └── 4.drop-database-n8n.sh # Limpeza COMPLETA
 │       │   └── *.yaml         # Manifests K8s
-│       └── grafana/            # Monitoramento Grafana (NOVO!)
+│       ├── grafana/            # Monitoramento Grafana
+│       │   ├── scripts/        # Deploy e manutenção
+│       │   │   ├── 1.deploy-grafana.sh         # Deploy aplicação
+│       │   │   ├── 2.destroy-grafana.sh        # Remove app (mantém dados)
+│       │   │   └── 4.drop-database-grafana.sh  # Limpeza COMPLETA
+│       │   └── *.yaml         # Manifests K8s
+│       ├── prometheus/         # Monitoramento Prometheus
+│       │   ├── scripts/        # Deploy e manutenção
+│       │   └── *.yaml         # Manifests K8s
+│       └── glpi/               # ITSM e Service Desk
 │           ├── scripts/        # Deploy e manutenção
-│           │   ├── 3.start-grafana.sh         # Deploy aplicação
-│           │   ├── 2.destroy-grafana.sh       # Remove app (mantém dados)
-│           │   └── 4.drop-database-grafana.sh # Limpeza COMPLETA (NOVO!)
+│           │   ├── 1.deploy-glpi.sh        # Deploy aplicação
+│           │   ├── 2.destroy-glpi.sh       # Remove app (mantém dados)
+│           │   └── 4.drop-database-glpi.sh # Limpeza COMPLETA
 │           └── *.yaml         # Manifests K8s
 ├── backup/                     # 🗄️ Sistema de Backup
 │   ├── scripts/               # Scripts de backup/restore
@@ -119,9 +148,9 @@ k8s_local/
 | ---------------- | -------- | ------------------------ | ----------------- |
 | **k3d**          | 5.8.3    | Cluster Kubernetes local | `kubectl`         |
 | **PostgreSQL**   | 16       | Database persistente     | `localhost:30432` |
-| **Redis**        | 8.2.2    | Cache e sessões          | Interno (cluster) |
-| **n8n**          | 1.114.4  | Automação workflows      | HTTPS `:8443`     |
-| **Grafana**      | 12.2     | Dashboards e monitoring  | HTTPS `:8443`     |
+| **Redis**        | 8.2.3    | Cache e sessões          | Interno (cluster) |
+| **n8n**          | 1.118.2  | Automação workflows      | HTTPS `:8443`     |
+| **Grafana**      | 12.2.1   | Dashboards e monitoring  | HTTPS `:8443`     |
 | **Traefik**      | Built-in | Ingress Controller       | HTTP/HTTPS        |
 | **cert-manager** | 1.18.2   | Certificados TLS         | Automático        |
 

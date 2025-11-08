@@ -5,37 +5,45 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![k3d](https://img.shields.io/badge/k3d-v5.8.3-blue)](https://k3d.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-8.2.2-red)](https://redis.io/)
-[![n8n](https://img.shields.io/badge/n8n-1.114.4-orange)](https://n8n.io/)
+[![MariaDB](https://img.shields.io/badge/MariaDB-12.0.2-orange)](https://mariadb.org/)
+[![Redis](https://img.shields.io/badge/Redis-8.2.3-red)](https://redis.io/)
+[![n8n](https://img.shields.io/badge/n8n-1.118.2-orange)](https://n8n.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-12.2.1-orange)](https://grafana.com/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-v3.7.3-orange)](https://prometheus.io/)
+[![GLPI](https://img.shields.io/badge/GLPI-11.0.1-blue)](https://glpi-project.org/)
 [![cert-manager](https://img.shields.io/badge/cert--manager-v1.19.0-green)](https://cert-manager.io/)
 
 ## 🎯 **Status Atual - Infraestrutura Completa**
 
 - ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer com volume bind real
-- ✅ **PostgreSQL 16**: Persistência hostPath + N8N/Grafana databases
-- ✅ **MariaDB 12.0.2**: Banco dedicado GLPI + persistência hostPath (NOVO!)
-- ✅ **Redis 8.2.2**: Cache compartilhado com databases separados por app
-- ✅ **n8n 1.114.4**: HTTPS + TLS automático + PostgreSQL + Redis cache
-- ✅ **Grafana 12.2**: Monitoramento + HTTPS + PostgreSQL + auto-scaling
-- ✅ **GLPI 11.0.1**: Helpdesk + MariaDB + Redis cache + HTTPS (NOVO!)
-- ✅ **cert-manager v1.19.0**: Certificados auto-renováveis
+- ✅ **PostgreSQL 16**: Persistência hostPath + databases para n8n/grafana/prometheus
+- ✅ **MariaDB 12.0.2**: Banco dedicado GLPI + persistência hostPath
+- ✅ **Redis 8.2.3**: Cache compartilhado com databases separados (DB0-DB3)
+- ✅ **n8n 1.118.2**: HTTPS + TLS automático + PostgreSQL + Redis cache
+- ✅ **Grafana 12.2.1**: Dashboards + PostgreSQL + Redis + auto-scaling
+- ✅ **Prometheus v3.7.3**: Métricas + alertas + PostgreSQL + Redis cache
+- ✅ **GLPI 11.0.1**: Service Desk + MariaDB + Redis cache + HTTPS
+- ✅ **cert-manager v1.19.0**: Certificados TLS auto-renováveis
 - ✅ **Sistema de Backup**: PostgreSQL + MariaDB + PVCs com persistência real
-- ✅ **Namespaces Organizados**: postgres, mariadb, redis, n8n, grafana, glpi, cert-manager
+- ✅ **Namespaces Organizados**: postgres, mariadb, redis, n8n, grafana, prometheus, glpi, cert-manager
 - ✅ **Permissões Configuradas**: fsGroup correto para todos os componentes
 - ✅ **TRUE PaaS BEHAVIOR**: Dados sobrevivem à destruição/recriação do cluster
+- ✅ **Scripts de Limpeza**: Destruição completa e segura do ambiente
 
 ## 🌐 **Pontos de Acesso**
 
-| Serviço        | URL/Endpoint                         | Porta | Tipo      |
-| -------------- | ------------------------------------ | ----- | --------- |
-| **n8n**        | `https://n8n.brioit.local:8443`      | 8443  | HTTPS/TLS |
-| **Grafana**    | `https://grafana.brioit.local:8443`  | 8443  | HTTPS/TLS |
-| **GLPI**       | `https://glpi.brioit.local:8443`     | 8443  | HTTPS/TLS |
-| **PostgreSQL** | `localhost:30432`                    | 30432 | NodePort  |
-| **MariaDB**    | `localhost:30306`                    | 30306 | NodePort  |
-| **Redis**      | `redis.redis.svc.cluster.local:6379` | 6379  | ClusterIP |
+| Serviço        | URL/Endpoint                                     | Porta | Tipo      |
+| -------------- | ------------------------------------------------ | ----- | --------- |
+| **n8n**        | `https://n8n.local.127.0.0.1.nip.io:8443`        | 8443  | HTTPS/TLS |
+| **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443`    | 8443  | HTTPS/TLS |
+| **Prometheus** | `https://prometheus.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
+| **GLPI**       | `https://glpi.local.127.0.0.1.nip.io:8443`       | 8443  | HTTPS/TLS |
+| **PostgreSQL** | `localhost:30432`                                | 30432 | NodePort  |
+| **MariaDB**    | `localhost:30306`                                | 30306 | NodePort  |
+| **Redis**      | `redis.redis.svc.cluster.local:6379`             | 6379  | ClusterIP |
 
-> ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
+> ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root  
+> 🌐 **DNS nip.io**: Resolve automaticamente para 127.0.0.1 sem modificar /etc/hosts
 
 ## � **Configuração de Persistência**
 
@@ -68,18 +76,26 @@
 
 ```
 /home/dsm/cluster/
-├── postgresql/data/              # PostgreSQL databases (N8N + Grafana)
+├── postgresql/
+│   ├── data/                     # PostgreSQL databases (n8n + grafana + prometheus)
+│   └── backup/                   # Backups automáticos
 ├── mariadb/                      # MariaDB database (GLPI) - fsGroup: 999
-├── redis/data/                   # Redis cache (compartilhado)
+├── redis/                        # Redis cache (compartilhado) - DB0-DB3
 ├── applications/
-│   ├── n8n/data/                # n8n workflows - fsGroup: 1001
-│   ├── n8n/user-data/           # n8n user files
-│   ├── grafana/data/            # Grafana dashboards - fsGroup: 472
-│   ├── grafana/plugins-dashboards/  # Grafana plugins
-│   └── glpi/                    # GLPI data, config, files - fsGroup: 1000
-│       ├── data/                # Dados principais
-│       ├── config/              # Configurações
-│       └── files/               # Uploads e anexos
+│   ├── n8n/
+│   │   ├── data/                # n8n workflows - fsGroup: 1001
+│   │   └── user-data/           # n8n user files
+│   ├── grafana/
+│   │   ├── data/                # Grafana dashboards - fsGroup: 472
+│   │   └── plugins-dashboards/  # Grafana plugins
+│   ├── prometheus/
+│   │   ├── data/                # Prometheus time-series data
+│   │   └── config/              # Prometheus configurações
+│   └── glpi/
+│       ├── data/                # GLPI dados principais - fsGroup: 1000
+│       ├── config/              # GLPI configurações
+│       └── files/               # GLPI uploads e anexos
+└── pvc/                         # PVCs dinâmicos
 ```
 
 > ⚠️ **Permissões Importantes**: Cada aplicação possui fsGroup específico configurado no deployment para garantir acesso correto aos volumes persistentes.
@@ -107,6 +123,7 @@ Este projeto implementa uma **arquitetura dual-database** otimizada para diferen
 
 - **N8N**: Workflows complexos, JSON fields, extensões
 - **Grafana**: Dashboards, alertas, configurações avançadas
+- **Prometheus**: Time-series data, métricas, alertas
 - **Recursos**: JSONB, arrays, extensões, performance otimizada
 
 ### **🗄️ MariaDB 12.0.2** (Aplicações Tradicionais)
@@ -114,11 +131,12 @@ Este projeto implementa uma **arquitetura dual-database** otimizada para diferen
 - **GLPI**: Compatibilidade oficial MySQL/MariaDB
 - **Recursos**: Transações ACID, relações tradicionais, compatibilidade
 
-### **⚡ Redis 8.2.2** (Cache Compartilhado)
+### **⚡ Redis 8.2.3** (Cache Compartilhado)
 
 - **Database 0**: N8N cache e sessões
 - **Database 1**: Grafana cache
 - **Database 2**: GLPI cache e sessões
+- **Database 3**: Prometheus cache
 
 > 💡 **Vantagem**: Cada aplicação usa o banco ideal para suas necessidades, mantendo performance e compatibilidade máximas.
 
@@ -126,14 +144,15 @@ Este projeto implementa uma **arquitetura dual-database** otimizada para diferen
 
 ### **Configuração de fsGroup por Aplicação**
 
-| Aplicação      | fsGroup | Proprietário Pasta          | Localização                               |
-| -------------- | ------- | --------------------------- | ----------------------------------------- |
-| **PostgreSQL** | 999     | `postgres:postgres`         | `/home/dsm/cluster/postgresql/`           |
-| **MariaDB**    | 999     | `systemd-coredump:ssh_keys` | `/home/dsm/cluster/mariadb/`              |
-| **N8N**        | 1001    | `n8n:n8n`                   | `/home/dsm/cluster/applications/n8n/`     |
-| **Grafana**    | 472     | `grafana:grafana`           | `/home/dsm/cluster/applications/grafana/` |
-| **GLPI**       | 1000    | `dsm:dsm`                   | `/home/dsm/cluster/applications/glpi/`    |
-| **Redis**      | -       | `redis:redis`               | `/home/dsm/cluster/redis/`                |
+| Aplicação      | fsGroup | Proprietário Pasta          | Localização                                  |
+| -------------- | ------- | --------------------------- | -------------------------------------------- |
+| **PostgreSQL** | 999     | `postgres:postgres`         | `/home/dsm/cluster/postgresql/`              |
+| **MariaDB**    | 999     | `systemd-coredump:ssh_keys` | `/home/dsm/cluster/mariadb/`                 |
+| **N8N**        | 1001    | `n8n:n8n`                   | `/home/dsm/cluster/applications/n8n/`        |
+| **Grafana**    | 472     | `grafana:grafana`           | `/home/dsm/cluster/applications/grafana/`    |
+| **Prometheus** | 65534   | `nobody:nogroup`            | `/home/dsm/cluster/applications/prometheus/` |
+| **GLPI**       | 1000    | `dsm:dsm`                   | `/home/dsm/cluster/applications/glpi/`       |
+| **Redis**      | 999     | `redis:redis`               | `/home/dsm/cluster/redis/`                   |
 
 ### **🛡️ Segurança de Credenciais**
 
@@ -467,25 +486,35 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 
 ### **📖 Documentos Principais**
 
-| 📄 **Documento**                                   | 🎯 **Foco**           | 📋 **Conteúdo**                                    |
-| -------------------------------------------------- | --------------------- | -------------------------------------------------- |
-| **[README.md](README.md)**                         | Overview geral        | Instalação, SSH, início rápido, visão geral        |
-| **[README-INFRA.md](README-INFRA.md)**             | Infraestrutura        | k3d, PostgreSQL, cert-manager, storage, networking |
-| **[README-N8N.md](README-N8N.md)**                 | Aplicação n8n         | Deploy, configuração, scaling, troubleshooting     |
-| **[README-GRAFANA.md](README-GRAFANA.md)**         | Aplicação Grafana     | Deploy, dashboards, monitoramento, observabilidade |
-| **[README-PERSISTENCE.md](README-PERSISTENCE.md)** | Persistência de Dados | hostPath volumes, backup, configuração templates   |
-| **[README-WSL2.md](README-WSL2.md)**               | Configuração WSL2     | Otimização, performance, troubleshooting WSL2      |
-| **[README-SECURITY.md](README-SECURITY.md)**       | Segurança             | Templates, credenciais, boas práticas              |
+| 📄 **Documento**                                           | 🎯 **Foco**           | 📋 **Conteúdo**                                    |
+| ---------------------------------------------------------- | --------------------- | -------------------------------------------------- |
+| **[README.md](README.md)**                                 | Overview geral        | Instalação, SSH, início rápido, visão geral        |
+| **[README-MAIN.md](README-MAIN.md)**                       | Documentação completa | Guia completo do projeto                           |
+| **[README-INFRA.md](README-INFRA.md)**                     | Infraestrutura        | k3d, PostgreSQL, MariaDB, Redis, cert-manager      |
+| **[README-N8N.md](README-N8N.md)**                         | Aplicação n8n         | Deploy, configuração, workflows, troubleshooting   |
+| **[README-GRAFANA.md](README-GRAFANA.md)**                 | Aplicação Grafana     | Deploy, dashboards, monitoramento, observabilidade |
+| **[README-PROMETHEUS.md](README-PROMETHEUS.md)**           | Aplicação Prometheus  | Deploy, métricas, alertas, configuração            |
+| **[README-GLPI.md](README-GLPI.md)**                       | Aplicação GLPI        | Deploy, service desk, ITSM, troubleshooting        |
+| **[README-PERSISTENCE.md](README-PERSISTENCE.md)**         | Persistência de Dados | hostPath volumes, backup, configuração templates   |
+| **[README-WSL2.md](README-WSL2.md)**                       | Configuração WSL2     | Otimização, performance, troubleshooting WSL2      |
+| **[README-SECURITY.md](README-SECURITY.md)**               | Segurança             | Templates, credenciais, boas práticas              |
+| **[DAILY-ROUTINE.md](DAILY-ROUTINE.md)**                   | Rotina Diária         | Comandos do dia a dia, manutenção                  |
+| **[SCRIPT-ANALYSIS-REPORT.md](SCRIPT-ANALYSIS-REPORT.md)** | Análise Scripts       | Documentação detalhada dos 19 scripts              |
 
 ### **🔄 Quando Usar Cada Documento**
 
 - **🆕 Primeiro uso?** → Comece com este **README.md**
+- **📚 Documentação completa?** → Consulte **[README-MAIN.md](README-MAIN.md)**
 - **🏗️ Problemas de infraestrutura?** → Consulte **[README-INFRA.md](README-INFRA.md)**
 - **🔧 Questões específicas do n8n?** → Veja **[README-N8N.md](README-N8N.md)**
 - **📊 Monitoramento e Grafana?** → Veja **[README-GRAFANA.md](README-GRAFANA.md)**
-- **💾 Dados não persistem após destruir cluster?** → Veja **[README-PERSISTENCE.md](README-PERSISTENCE.md)**
+- **� Métricas e Prometheus?** → Veja **[README-PROMETHEUS.md](README-PROMETHEUS.md)**
+- **🎫 Service Desk e GLPI?** → Veja **[README-GLPI.md](README-GLPI.md)**
+- **�💾 Dados não persistem após destruir cluster?** → Veja **[README-PERSISTENCE.md](README-PERSISTENCE.md)**
 - **💻 Configuração WSL2?** → Consulte **[README-WSL2.md](README-WSL2.md)**
 - **🔐 Segurança e credenciais?** → Veja **[README-SECURITY.md](README-SECURITY.md)**
+- **🗓️ Rotina diária de uso?** → Veja **[DAILY-ROUTINE.md](DAILY-ROUTINE.md)**
+- **🔍 Análise de scripts?** → Veja **[SCRIPT-ANALYSIS-REPORT.md](SCRIPT-ANALYSIS-REPORT.md)**
 - **📈 Expandindo para novas aplicações?** → Use os documentos como template
 
 ### **💡 Benefícios da Estrutura Modular**
@@ -528,8 +557,6 @@ cp -r k8s/apps/n8n/* k8s/apps/NOVA_APP/
 - **✅ Redis**: Cache e sessões (implementado)
 - **✅ PostgreSQL**: Base de dados para apps (implementado)
 - **✅ MariaDB**: Base de dados para GLPI (implementado)
-- **🔄 MinIO**: Object storage S3-compatible (planejado)
-- **🔄 Prometheus**: Métricas detalhadas (planejado)
 
 ## �🔑 **Configuração SSH para GitHub (Opcional)**
 
@@ -661,19 +688,52 @@ uname -a
 ## 📁 Estrutura do Projeto
 
 ```
-k3d-local-development/
+brioit_local/
 ├── 📖 README.md                    # Este arquivo (overview geral)
+├── 📖 README-MAIN.md               # Documentação principal completa
 ├── 📖 README-INFRA.md              # Documentação de infraestrutura
-├── 📖 README-N8N.md                # Documentação da aplicação n8n
-├── 📖 README-PERSISTENCE.md        # Documentação de persistência de dados
-├── infra/                          # Infraestrutura base (k3d, PostgreSQL, cert-manager)
-│   ├── k3d/                        # Configuração do cluster
+├── 📖 README-N8N.md                # Documentação n8n (workflows)
+├── 📖 README-GRAFANA.md            # Documentação Grafana (dashboards)
+├── 📖 README-PROMETHEUS.md         # Documentação Prometheus (métricas)
+├── 📖 README-GLPI.md               # Documentação GLPI (service desk)
+├── 📖 README-PERSISTENCE.md        # Documentação de persistência
+├── 📖 README-SECURITY.md           # Documentação de segurança
+├── 📖 README-WSL2.md               # Documentação WSL2
+├── 📖 DAILY-ROUTINE.md             # Rotina diária de uso
+├── 📖 SCRIPT-ANALYSIS-REPORT.md   # Análise de scripts
+├── 🚀 start-all.sh                 # Script principal (infraestrutura + aplicações)
+├── infra/                          # Infraestrutura base
+│   ├── k3d/                        # Configuração do cluster k3d
+│   │   └── k3d-config.yaml         # Config: 3 nodes, hostPath /home/dsm/cluster
 │   ├── cert-manager/               # Certificados TLS
-│   ├── postgres/                   # Database persistente
-│   └── scripts/                    # Scripts de infraestrutura
-└── k8s/                           # Aplicações Kubernetes
-    ├── apps/n8n/                  # Manifests do n8n
-    └── scripts/                    # Scripts de aplicações
+│   ├── postgres/                   # PostgreSQL (n8n, grafana, prometheus)
+│   ├── mariadb/                    # MariaDB (GLPI)
+│   ├── redis/                      # Redis (cache para todas apps)
+│   └── scripts/                    # 19 scripts de infraestrutura
+│       ├── 1.create-infra.sh      # Cria infraestrutura completa
+│       ├── 2.destroy-infra.sh     # Destrói infraestrutura
+│       ├── 10.start-infra.sh      # Inicia infra (usado pelo start-all.sh)
+│       ├── 14.clean-cluster-data.sh    # Drop databases (cluster rodando)
+│       ├── 15.clean-cluster-pvc.sh     # Limpa filesystem (cluster parado)
+│       ├── 18.destroy-all.sh           # Orquestra destruição completa
+│       └── 19.test-persistence.sh      # Testa persistência
+├── k8s/                           # Aplicações Kubernetes
+│   └── apps/
+│       ├── n8n/                   # n8n (automação de workflows)
+│       │   ├── manifests/         # YAMLs: deployment, service, ingress, PV/PVC
+│       │   └── scripts/           # Scripts de deploy/destroy
+│       ├── grafana/               # Grafana (dashboards e monitoring)
+│       │   ├── manifests/         # YAMLs: deployment, service, ingress, PV/PVC
+│       │   └── scripts/           # Scripts de deploy/destroy
+│       ├── prometheus/            # Prometheus (métricas e alertas)
+│       │   ├── manifests/         # YAMLs: deployment, service, ingress, PV/PVC
+│       │   └── scripts/           # Scripts de deploy/destroy
+│       └── glpi/                  # GLPI (service desk e ITSM)
+│           ├── manifests/         # YAMLs: deployment, service, ingress, PV/PVC
+│           └── scripts/           # Scripts de deploy/destroy
+└── backup/                        # Scripts de backup
+    ├── scripts/                   # Scripts de backup automático
+    └── cronjobs/                  # CronJobs para backups agendados
 ```
 
 > 📚 **Detalhes completos da estrutura**: Consulte **[README-INFRA.md](README-INFRA.md)** para informações detalhadas sobre cada componente da infraestrutura.
@@ -689,19 +749,27 @@ k3d-local-development/
 ./start-all.sh grafana               # Deploy infra + somente grafana
 
 # 🎯 OPÇÃO 2: Deploy manual por componente
-./infra/scripts/10.start-infra.sh               # k3d + PostgreSQL + Redis + cert-manager
-./k8s/apps/n8n/scripts/3.start-n8n.sh          # Deploy n8n (requer infra)
-./k8s/apps/grafana/scripts/3.start-grafana.sh  # Deploy grafana (requer infra)
+./infra/scripts/10.start-infra.sh                # k3d + PostgreSQL + MariaDB + Redis + cert-manager
+./k8s/apps/n8n/scripts/3.start-n8n.sh            # Deploy n8n (requer infra)
+./k8s/apps/grafana/scripts/3.start-grafana.sh    # Deploy grafana (requer infra)
+./k8s/apps/prometheus/scripts/3.start-prometheus.sh  # Deploy prometheus (requer infra)
+./k8s/apps/glpi/scripts/3.start-glpi.sh          # Deploy glpi (requer infra)
 
-# 🎯 OPÇÃO 3: Limpeza e manutenção
-./infra/scripts/2.destroy-infra.sh     # Remove cluster completo (limpa tudo)
-k3d cluster delete k3d-cluster         # Alternativa direta para limpeza
+# 🎯 OPÇÃO 3: Limpeza completa e segura
+./infra/scripts/18.destroy-all.sh    # Orquestra: drop DB → destroy cluster → clean filesystem
+# OU passo a passo:
+./infra/scripts/14.clean-cluster-data.sh  # Drop databases (cluster rodando)
+./infra/scripts/2.destroy-infra.sh        # Destroy cluster
+./infra/scripts/15.clean-cluster-pvc.sh   # Clean filesystem (cluster parado)
 
 # 🗑️ OPÇÃO 4: Verificação de status
 kubectl get all --all-namespaces       # Ver todos os recursos
 kubectl get pods -n n8n                # Status do n8n
 kubectl get pods -n grafana            # Status do grafana
+kubectl get pods -n prometheus         # Status do prometheus
+kubectl get pods -n glpi               # Status do glpi
 kubectl get pods -n postgres           # Status do PostgreSQL
+kubectl get pods -n mariadb            # Status do MariaDB
 kubectl get pods -n redis              # Status do Redis
 ```
 
@@ -709,32 +777,41 @@ kubectl get pods -n redis              # Status do Redis
 
 ### **🧠 Processo Automatizado:**
 
-| Script                 | O que faz                                       | Tempo |
-| ---------------------- | ----------------------------------------------- | ----- |
-| **start-all.sh**       | Deploy completo: infra + n8n + grafana          | ~3min |
-| **10.start-infra.sh**  | k3d cluster + PostgreSQL + Redis + cert-manager | ~2min |
-| **3.start-n8n.sh**     | n8n 1.114.4 + TLS + Redis cache + hosts         | ~1min |
-| **3.start-grafana.sh** | Grafana 12.2 + TLS + PostgreSQL + hosts         | ~1min |
-| **2.destroy-infra.sh** | Remove cluster completo + limpeza total         | ~30s  |
+| Script                    | O que faz                                                 | Tempo |
+| ------------------------- | --------------------------------------------------------- | ----- |
+| **start-all.sh**          | Deploy completo: infra + todas apps                       | ~5min |
+| **10.start-infra.sh**     | k3d cluster + PostgreSQL + MariaDB + Redis + cert-manager | ~2min |
+| **3.start-n8n.sh**        | n8n 1.118.2 + TLS + Redis cache + hosts                   | ~1min |
+| **3.start-grafana.sh**    | Grafana 12.2.1 + TLS + PostgreSQL + hosts                 | ~1min |
+| **3.start-prometheus.sh** | Prometheus v3.7.3 + TLS + métricas + hosts                | ~1min |
+| **3.start-glpi.sh**       | GLPI 11.0.1 + MariaDB + Redis + hosts                     | ~1min |
+| **18.destroy-all.sh**     | Destruição completa: drop DB → destroy → clean filesystem | ~2min |
+| **2.destroy-infra.sh**    | Remove cluster completo (dados preservados em hostPath)   | ~30s  |
 
 ### **💡 Fluxo de Uso Típico:**
 
 ```bash
 # ☀️ Primeira execução (deploy completo)
-./start-all.sh                       # Infraestrutura + n8n + grafana
+./start-all.sh                       # Infraestrutura + todas aplicações
 
 # 🔄 Deploy aplicação específica
 ./start-all.sh n8n                   # Somente n8n
 ./start-all.sh grafana               # Somente grafana
+./start-all.sh prometheus            # Somente prometheus
+./start-all.sh glpi                  # Somente glpi
 
 # 🛠️ Manutenção (remover aplicação mantendo dados)
 ./k8s/apps/n8n/scripts/2.destroy-n8n.sh         # Remove n8n (dados preservados)
 ./k8s/apps/grafana/scripts/2.destroy-grafana.sh # Remove grafana (dados preservados)
+./k8s/apps/prometheus/scripts/2.destroy-prometheus.sh # Remove prometheus (dados preservados)
+./k8s/apps/glpi/scripts/2.destroy-glpi.sh       # Remove glpi (dados preservados)
 
 # 🔄 Reiniciar ambiente (se necessário)
 ./infra/scripts/2.destroy-infra.sh
-./infra/scripts/9.start-infra.sh
-./k8s/apps/n8n/scripts/1.deploy-n8n.sh
+./start-all.sh
+
+# 🗑️ Limpeza COMPLETA (remove tudo incluindo dados)
+./infra/scripts/18.destroy-all.sh    # Drop databases → Destroy cluster → Clean filesystem
 ```
 
 ### **🌐 Acesso às Aplicações:**
@@ -932,19 +1009,25 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ### **🔧 Scripts Específicos**
 
-| **Categoria**              | **Script**                                    | **Função**                                     |
-| -------------------------- | --------------------------------------------- | ---------------------------------------------- |
-| **🚀 Deploy Completo**     | `start-all.sh`                                | Infraestrutura + todas aplicações              |
-| **🏗️ Infraestrutura**      | `infra/scripts/10.start-infra.sh`             | Cluster + PostgreSQL + Redis + cert-manager    |
-| **� Aplicação n8n**        | `k8s/apps/n8n/scripts/3.start-n8n.sh`         | Deploy n8n com HTTPS                           |
-| **📊 Aplicação Grafana**   | `k8s/apps/grafana/scripts/3.start-grafana.sh` | Deploy Grafana com HTTPS                       |
-| **🗑️ Limpeza Infra**       | `infra/scripts/2.destroy-infra.sh`            | Remove cluster (mantém dados hostPath)         |
-| **� Teste Persistência**   | `infra/scripts/15.test-persistence.sh`        | Testa que dados sobrevivem destroy cluster     |
-| **�🧹 Limpeza Dados**      | `infra/scripts/14.clean-cluster-data.sh`      | Remove TODOS os dados hostPath (restart limpo) |
-| **�️ Limpeza Aplicações**  | `k8s/apps/*/scripts/2.destroy-*.sh`           | Remove app (mantém dados)                      |
-| **💥 Limpeza Completa DB** | `k8s/apps/*/scripts/4.drop-database-*.sh`     | Remove PERMANENTEMENTE dados da aplicação      |
+### **🔧 Scripts Específicos**
 
-> 📚 **Lista completa de scripts**: Consulte **[README-INFRA.md](README-INFRA.md)** para todos os scripts disponíveis e suas funções específicas.
+| **Categoria**                  | **Script**                                          | **Função**                                                         |
+| ------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------ |
+| **🚀 Deploy Completo**         | `start-all.sh`                                      | Infraestrutura + todas aplicações (n8n, grafana, prometheus, glpi) |
+| **🏗️ Infraestrutura**          | `infra/scripts/10.start-infra.sh`                   | Cluster + PostgreSQL + MariaDB + Redis + cert-manager              |
+| **🎯 Aplicação n8n**           | `k8s/apps/n8n/scripts/3.start-n8n.sh`               | Deploy n8n com HTTPS                                               |
+| **📊 Aplicação Grafana**       | `k8s/apps/grafana/scripts/3.start-grafana.sh`       | Deploy Grafana com HTTPS                                           |
+| **� Aplicação Prometheus**     | `k8s/apps/prometheus/scripts/3.start-prometheus.sh` | Deploy Prometheus com HTTPS                                        |
+| **🎫 Aplicação GLPI**          | `k8s/apps/glpi/scripts/3.start-glpi.sh`             | Deploy GLPI com HTTPS                                              |
+| **�🗑️ Limpeza Infra**          | `infra/scripts/2.destroy-infra.sh`                  | Remove cluster (mantém dados hostPath)                             |
+| **🧪 Teste Persistência**      | `infra/scripts/19.test-persistence.sh`              | Testa que dados sobrevivem destroy cluster                         |
+| **💥 Destruição Completa**     | `infra/scripts/18.destroy-all.sh`                   | Remove cluster + databases + filesystem (limpeza total)            |
+| **🧹 Limpeza Databases**       | `infra/scripts/14.clean-cluster-data.sh`            | Drop databases PostgreSQL e MariaDB (requer cluster ativo)         |
+| **📂 Limpeza Filesystem**      | `infra/scripts/15.clean-cluster-pvc.sh`             | Remove dados hostPath (requer cluster parado)                      |
+| **🗑️ Limpeza Aplicações**      | `k8s/apps/*/scripts/2.destroy-*.sh`                 | Remove app (mantém dados)                                          |
+| **💥 Drop Database Aplicação** | `k8s/apps/*/scripts/4.drop-database-*.sh`           | Remove PERMANENTEMENTE dados da aplicação                          |
+
+> 📚 **Lista completa de scripts**: Consulte **[SCRIPT-ANALYSIS-REPORT.md](SCRIPT-ANALYSIS-REPORT.md)** para todos os 19 scripts disponíveis com descrições detalhadas e fluxos de trabalho.
 
 ## 🔧 Solução de Problemas
 
@@ -1050,26 +1133,47 @@ git remote set-url origin git@github.com:USUARIO/REPOSITORIO.git
 
 ```bash
 # Cluster não inicia
-docker ps                           # Verificar Docker
-./infra/scripts/4.delete-cluster.sh  # Recriar cluster
-./infra/scripts/3.create-cluster.sh
+docker ps                              # Verificar Docker
+./infra/scripts/2.destroy-infra.sh     # Destruir cluster
+./infra/scripts/10.start-infra.sh      # Recriar cluster
 
 # PostgreSQL não conecta
-kubectl get pods -l app=postgres     # Verificar status
-kubectl logs -l app=postgres         # Verificar logs
+kubectl get pods -n postgres           # Verificar status
+kubectl logs postgres-0 -n postgres    # Verificar logs
 
-# n8n não carrega
-kubectl get pods -n n8n              # Verificar pods
-kubectl logs -f deployment/n8n -n n8n # Verificar logs
+# MariaDB não conecta (GLPI)
+kubectl get pods -n mariadb            # Verificar status
+kubectl logs mariadb-0 -n mariadb      # Verificar logs
+
+# Redis não conecta
+kubectl get pods -n redis              # Verificar status
+kubectl logs deployment/redis -n redis # Verificar logs
+
+# Aplicações não carregam
+kubectl get pods -n n8n                # n8n status
+kubectl get pods -n grafana            # grafana status
+kubectl get pods -n prometheus         # prometheus status
+kubectl get pods -n glpi               # glpi status
+
+# Ver logs de aplicação específica
+kubectl logs -f deployment/n8n -n n8n
+kubectl logs -f deployment/grafana -n grafana
+kubectl logs -f deployment/prometheus -n prometheus
+kubectl logs -f deployment/glpi -n glpi
 ```
 
 ### **📚 Troubleshooting Específico**
 
 Para problemas específicos, consulte a documentação modular:
 
-- **🏗️ Infraestrutura (k3d, PostgreSQL, cert-manager)**: **[README-INFRA.md](README-INFRA.md)**
-- **📱 Aplicação n8n (deployment, acesso, scaling)**: **[README-N8N.md](README-N8N.md)**
+- **🏗️ Infraestrutura (k3d, PostgreSQL, MariaDB, Redis, cert-manager)**: **[README-INFRA.md](README-INFRA.md)**
+- **🎯 Aplicação n8n (deployment, acesso, workflows)**: **[README-N8N.md](README-N8N.md)**
+- **📊 Aplicação Grafana (deployment, dashboards, datasources)**: **[README-GRAFANA.md](README-GRAFANA.md)**
+- **📈 Aplicação Prometheus (deployment, metrics, alerting)**: **[README-PROMETHEUS.md](README-PROMETHEUS.md)**
+- **🎫 Aplicação GLPI (deployment, helpdesk, inventário)**: **[README-GLPI.md](README-GLPI.md)**
 - **💾 Persistência de dados (hostPath, backup, templates)**: **[README-PERSISTENCE.md](README-PERSISTENCE.md)**
+- **🔐 Segurança (HTTPS, secrets, certificados)**: **[README-SECURITY.md](README-SECURITY.md)**
+- **📝 Rotina Diária (comandos úteis, manutenção)**: **[DAILY-ROUTINE.md](DAILY-ROUTINE.md)**
 
 ### **🆘 Script de Diagnóstico**
 
@@ -1082,16 +1186,19 @@ kubectl get ingress -A              # Networking
 kubectl get certificate -A          # TLS
 ```
 
-### Problemas de Acesso ao n8n
+### Problemas de Acesso às Aplicações
 
 #### 🚫 "404 page not found"
 
 ```bash
 # 1. Verificar se o /etc/hosts está configurado
-cat /etc/hosts | grep n8n
+cat /etc/hosts | grep ".nip.io"
 
-# Se não aparecer nada, adicionar:
+# Se não aparecer nada, adicionar todas as aplicações:
 echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
+echo '127.0.0.1 grafana.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
+echo '127.0.0.1 prometheus.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
+echo '127.0.0.1 glpi.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 # 2. Usar HTTPS na porta correta
 # ❌ Incorreto: http://n8n.local.127.0.0.1.nip.io:8080
@@ -1101,28 +1208,41 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 #### 🔒 "Secure cookie" ou problemas de TLS
 
 ```bash
-# Problema: n8n requer HTTPS mas você está acessando via HTTP
+# Problema: Aplicações requerem HTTPS mas você está acessando via HTTP
 
 # Solução 1 - Usar HTTPS (recomendado):
 # https://n8n.local.127.0.0.1.nip.io:8443
+# https://grafana.local.127.0.0.1.nip.io:8443
+# https://prometheus.local.127.0.0.1.nip.io:8443
+# https://glpi.local.127.0.0.1.nip.io:8443
 
-# Solução 2 - Port-forward sem TLS:
+# Solução 2 - Port-forward sem TLS (desenvolvimento):
 kubectl port-forward svc/n8n 9090:5678 -n n8n
-# Acesso: http://localhost:9090
+kubectl port-forward svc/grafana 3000:3000 -n grafana
+kubectl port-forward svc/prometheus 9090:9090 -n prometheus
+kubectl port-forward svc/glpi 8080:80 -n glpi
 ```
 
 #### 🌐 Ingress não funciona
 
 ```bash
-# Verificar ingress
-kubectl get ingress -n n8n
-kubectl describe ingress n8n -n n8n
+# Verificar ingress de todas as aplicações
+kubectl get ingress -A
 
-# Verificar Traefik
+# Verificar ingress específico
+kubectl describe ingress n8n -n n8n
+kubectl describe ingress grafana -n grafana
+kubectl describe ingress prometheus -n prometheus
+kubectl describe ingress glpi -n glpi
+
+# Verificar Traefik (LoadBalancer do k3d)
 kubectl get pods -n kube-system | grep traefik
 
-# Testar acesso direto ao service
+# Testar acesso direto ao service (bypass ingress)
 kubectl port-forward svc/n8n 9090:5678 -n n8n
+kubectl port-forward svc/grafana 3000:3000 -n grafana
+kubectl port-forward svc/prometheus 9090:9090 -n prometheus
+kubectl port-forward svc/glpi 8080:80 -n glpi
 ```
 
 ### Certificados TLS
@@ -1131,12 +1251,26 @@ kubectl port-forward svc/n8n 9090:5678 -n n8n
 # Verificar cert-manager
 kubectl get pods -n cert-manager
 
-# Verificar certificados
-kubectl get certificates --all-namespaces
+# Verificar certificados de todas as aplicações
+kubectl get certificates -A
 
-# Recrear certificados
+# Verificar certificado específico
+kubectl describe certificate n8n-tls -n n8n
+kubectl describe certificate grafana-tls -n grafana
+kubectl describe certificate prometheus-tls -n prometheus
+kubectl describe certificate glpi-tls -n glpi
+
+# Recrear certificados (se houver problemas)
 kubectl delete certificate n8n-tls -n n8n
-kubectl apply -f k8s/apps/n8n/n8n-certificate.yaml
+kubectl delete certificate grafana-tls -n grafana
+kubectl delete certificate prometheus-tls -n prometheus
+kubectl delete certificate glpi-tls -n glpi
+
+# Reaplicar manifests de certificados
+kubectl apply -f k8s/apps/n8n/k8s/certificate-dns01.yaml
+kubectl apply -f k8s/apps/grafana/k8s/certificate-dns01.yaml
+kubectl apply -f k8s/apps/prometheus/k8s/certificate-dns01.yaml
+kubectl apply -f k8s/apps/glpi/k8s/certificate-dns01.yaml
 ```
 
 ## 💻 Desenvolvimento
@@ -1145,44 +1279,80 @@ kubectl apply -f k8s/apps/n8n/n8n-certificate.yaml
 
 ```bash
 # Listar todos os recursos
-kubectl get all --all-namespaces
+kubectl get all -A
 
-# Port-forward para PostgreSQL
-kubectl port-forward svc/postgres 5432:5432
+# Port-forward para bancos de dados
+kubectl port-forward svc/postgres 5432:5432 -n postgres  # PostgreSQL
+kubectl port-forward svc/mariadb 3306:3306 -n mariadb    # MariaDB
+kubectl port-forward svc/redis 6379:6379 -n redis        # Redis
 
-# Executar comandos no PostgreSQL
-kubectl exec -it statefulset/postgres -- psql -U postgres -d n8n
+# Executar comandos nos bancos de dados
+kubectl exec -it postgres-0 -n postgres -- psql -U postgres -d n8n
+kubectl exec -it postgres-0 -n postgres -- psql -U postgres -d grafana
+kubectl exec -it postgres-0 -n postgres -- psql -U postgres -d prometheus
+kubectl exec -it mariadb-0 -n mariadb -- mariadb -uroot -p
 
-# Logs em tempo real
+# Logs em tempo real das aplicações
 kubectl logs -f deployment/n8n -n n8n
+kubectl logs -f deployment/grafana -n grafana
+kubectl logs -f deployment/prometheus -n prometheus
+kubectl logs -f deployment/glpi -n glpi
 
-# Verificar status do HPA
-kubectl get hpa -n n8n
+# Verificar recursos do cluster
+kubectl top nodes                    # CPU e memória dos nodes
+kubectl top pods -A                  # CPU e memória dos pods
+kubectl get events -A --sort-by='.lastTimestamp'  # Eventos recentes
 
-# Monitorar auto-scaling
-kubectl get hpa n8n-hpa -n n8n -w
-
-# Escalar aplicações manualmente (desativa HPA temporariamente)
+# Escalar aplicações manualmente
 kubectl scale deployment/n8n --replicas=2 -n n8n
+kubectl scale deployment/grafana --replicas=2 -n grafana
+kubectl scale deployment/prometheus --replicas=1 -n prometheus  # Prometheus não suporta múltiplas réplicas
+kubectl scale deployment/glpi --replicas=2 -n glpi
 ```
 
 ### Adicionando Novas Aplicações
 
-1. Criar namespace: `k8s/apps/nova-app/nova-app-namespace.yaml`
-2. Configurar deployment: `k8s/apps/nova-app/nova-app-deployment.yaml`
-3. Criar service: `k8s/apps/nova-app/nova-app-service.yaml`
-4. Configurar ingress: `k8s/apps/nova-app/nova-app-ingress.yaml`
-5. Criar script de deploy: `k8s/scripts/deploy-nova-app.sh`
+1. Criar namespace: `k8s/apps/nova-app/k8s/nova-app-namespace.yaml`
+2. Criar secrets: `k8s/apps/nova-app/k8s/nova-app-secret-*.yaml`
+3. Configurar deployment: `k8s/apps/nova-app/k8s/nova-app-deployment.yaml`
+4. Criar service: `k8s/apps/nova-app/k8s/nova-app-service.yaml`
+5. Configurar ingress: `k8s/apps/nova-app/k8s/nova-app-ingress.yaml`
+6. Criar certificado: `k8s/apps/nova-app/k8s/certificate-dns01.yaml`
+7. Criar script de deploy: `k8s/apps/nova-app/scripts/3.start-nova-app.sh`
+8. Criar script de destroy: `k8s/apps/nova-app/scripts/2.destroy-nova-app.sh`
+9. Adicionar ao `start-all.sh` e atualizar documentação
+
+> 💡 **Dica**: Use as aplicações existentes (n8n, grafana, prometheus, glpi) como template para criar novas aplicações.
 
 ### Backup e Restore
 
 ```bash
-# Backup do PostgreSQL
-kubectl exec statefulset/postgres -- pg_dump -U postgres n8n > backup.sql
+# Backup do PostgreSQL (n8n, grafana, prometheus)
+kubectl exec postgres-0 -n postgres -- pg_dump -U postgres n8n > backup-n8n.sql
+kubectl exec postgres-0 -n postgres -- pg_dump -U postgres grafana > backup-grafana.sql
+kubectl exec postgres-0 -n postgres -- pg_dump -U postgres prometheus > backup-prometheus.sql
+
+# Backup do MariaDB (glpi)
+kubectl exec mariadb-0 -n mariadb -- mariadb-dump -uroot -p"${MARIADB_ROOT_PASSWORD}" glpi > backup-glpi.sql
 
 # Restore do PostgreSQL
-kubectl exec -i statefulset/postgres -- psql -U postgres n8n < backup.sql
+kubectl exec -i postgres-0 -n postgres -- psql -U postgres n8n < backup-n8n.sql
+kubectl exec -i postgres-0 -n postgres -- psql -U postgres grafana < backup-grafana.sql
+kubectl exec -i postgres-0 -n postgres -- psql -U postgres prometheus < backup-prometheus.sql
+
+# Restore do MariaDB
+kubectl exec -i mariadb-0 -n mariadb -- mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" glpi < backup-glpi.sql
+
+# Backup completo de volumes (filesystem)
+sudo tar -czf backup-cluster-$(date +%Y%m%d).tar.gz /home/dsm/cluster/
+
+# Restore de volumes (com cluster parado)
+./infra/scripts/2.destroy-infra.sh
+sudo tar -xzf backup-cluster-20241224.tar.gz -C /
+./infra/scripts/10.start-infra.sh
 ```
+
+> 📚 **Detalhes completos**: Consulte **[README-PERSISTENCE.md](README-PERSISTENCE.md)** para estratégias de backup e restore.
 
 ## 🚀 Deploy para Produção
 
@@ -1225,16 +1395,22 @@ kubectl apply -f k8s/
 Para deploy detalhado em produção, consulte:
 
 - **🏗️ Infraestrutura de Produção**: **[README-INFRA.md](README-INFRA.md)** - Seção "Produção"
-- **📱 n8n em Produção**: **[README-N8N.md](README-N8N.md)** - Seção "Scaling e Performance"
+- **🎯 n8n em Produção**: **[README-N8N.md](README-N8N.md)** - Seção "Scaling e Performance"
+- **📊 Grafana em Produção**: **[README-GRAFANA.md](README-GRAFANA.md)** - Seção "Monitoramento"
+- **📈 Prometheus em Produção**: **[README-PROMETHEUS.md](README-PROMETHEUS.md)** - Seção "High Availability"
+- **🎫 GLPI em Produção**: **[README-GLPI.md](README-GLPI.md)** - Seção "Escalabilidade"
 
 ### **✅ Checklist Básico**
 
-- [ ] **Cluster Kubernetes** disponível (AKS/EKS/GKE)
+- [ ] **Cluster Kubernetes** disponível (AKS/EKS/GKE/On-premise)
 - [ ] **kubectl** configurado para o cluster
-- [ ] **Storage Classes** definidas
-- [ ] **Domínios** configurados (DNS)
-- [ ] **Certificados** (Let's Encrypt ou Enterprise)
-- [ ] **Monitoring** configurado
+- [ ] **Storage Classes** definidas (para PVC dinâmico)
+- [ ] **Domínios** configurados (DNS apontando para LoadBalancer)
+- [ ] **Certificados** (Let's Encrypt ou Enterprise CA)
+- [ ] **Secrets** configurados (senhas, chaves API, tokens)
+- [ ] **Monitoring** configurado (Prometheus + Grafana integrados)
+- [ ] **Backup** configurado (PostgreSQL, MariaDB, volumes)
+- [ ] **High Availability** planejada (múltiplas réplicas, anti-affinity)
 
 ## 🤝 Contribuindo e Fork do Projeto
 
@@ -1284,90 +1460,15 @@ git push origin main
 
 ### **💡 Ideias para Contribuições:**
 
-- **🆕 Novas aplicações**: Grafana, Redis, MinIO, Prometheus
-- **🔧 Melhorias nos scripts**: Detecção automática, logs melhores
-- **📚 Documentação**: Guias específicos, troubleshooting
-- **🏗️ Infraestrutura**: Monitoring, backup automático, service mesh
-- **🔐 Segurança**: RBAC, network policies, secrets management
+- **🆕 Novas aplicações**: Service Mesh (Istio/Linkerd), Logging Stack (ELK/Loki), APM (Jaeger)
+- **🔧 Melhorias nos scripts**: Detecção automática de estado, logs estruturados, validações
+- **📚 Documentação**: Guias específicos por aplicação, troubleshooting avançado, tutoriais
+- **🏗️ Infraestrutura**: Backup automático agendado, disaster recovery, multi-cluster
+- **🔐 Segurança**: RBAC completo, network policies, secrets management (Vault), security scanning
+- **📊 Observabilidade**: Dashboards customizados, alerting rules, distributed tracing
+- **🚀 Performance**: Otimização de recursos, caching strategies, connection pooling
 
 ---
 
-**K3D Local Development** - Ambiente de Desenvolvimento Kubernetes  
-_Última atualização: dezembro 2025_
-git remote add upstream git@github.com:USUARIO_ORIGINAL/k3d-local-development.git
-
-# 5. Criar branch para sua feature
-
-git checkout -b minha-feature
-
-# 6. Fazer suas alterações e commit
-
-git add .
-git commit -m "feat: adicionar nova funcionalidade"
-
-# 7. Push para SEU fork
-
-git push origin minha-feature
-
-# 7. Criar Pull Request no GitHub
-
-````
-
-### **🔄 Mantendo Fork Atualizado:**
-
-```bash
-# Buscar mudanças do projeto original
-git fetch upstream
-
-# Fazer merge das mudanças na main
-git checkout main
-git merge upstream/main
-
-# Push das atualizações para seu fork
-git push origin main
-````
-
-### **📋 Checklist para Contribuições:**
-
-- [ ] **Credenciais removidas**: Use templates `.template`
-- [ ] **Documentação atualizada**: README.md reflete suas mudanças
-- [ ] **Scripts testados**: Validar funcionamento completo
-- [ ] **Commit claro**: Mensagem descritiva da alteração
-- [ ] **Branch específica**: Não commitar direto na `main`
-
-### **🚀 Publicando seu Próprio Fork:**
-
-Se quiser publicar uma versão customizada:
-
-```bash
-# 1. Clonar este projeto
-git clone git@github.com:USUARIO_ORIGINAL/k3d-local-development.git
-cd k3d-local-development
-
-# 2. Liberar execução dos scripts
-find . -name "*.sh" -type f -exec chmod +x {} \;
-
-# 3. Remover remote origin
-git remote remove origin
-
-# 4. Criar seu próprio repositório no GitHub
-
-# 5. Adicionar seu repositório como origin
-git remote add origin git@github.com:SEU_USUARIO/MEU_PROJETO.git
-
-# 6. Configurar credenciais (OBRIGATÓRIO)
-cp infra/postgres/postgres-secret-admin.yaml.template \
-   infra/postgres/postgres-secret-admin.yaml
-cp k8s/apps/n8n/n8n-secret-db.yaml.template \
-   k8s/apps/n8n/n8n-secret-db.yaml
-
-# 7. Customizar e fazer primeiro push
-git add .
-git commit -m "feat: fork customizado do k3d-local-development"
-git push -u origin main
-```
-
----
-
-**K3D Local** - Ambiente de Desenvolvimento Kubernetes  
-_Última atualização: setembro 2025_
+**K3D Local Development** - Ambiente Kubernetes com 4 Aplicações (n8n, Grafana, Prometheus, GLPI)  
+_Última atualização: dezembro 2024_

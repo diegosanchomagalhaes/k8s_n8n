@@ -22,17 +22,16 @@ echo "🗑️  Parando deployment glpi..."
 kubectl scale deployment glpi --replicas=0 -n glpi 2>/dev/null || echo "   → Deployment glpi não encontrado ou já parado"
 
 echo "🗑️  Removendo PVCs (Persistent Volume Claims)..."
+kubectl delete pvc glpi-pvc -n glpi 2>/dev/null || echo "   → PVC glpi-pvc não encontrado"
 kubectl delete pvc glpi-data-pvc -n glpi 2>/dev/null || echo "   → PVC glpi-data-pvc não encontrado"
 kubectl delete pvc glpi-config-pvc -n glpi 2>/dev/null || echo "   → PVC glpi-config-pvc não encontrado"
 kubectl delete pvc glpi-files-pvc -n glpi 2>/dev/null || echo "   → PVC glpi-files-pvc não encontrado"
 
 echo "🗑️  Removendo PVs (Persistent Volumes)..."
+kubectl delete pv glpi-pv-hostpath 2>/dev/null || echo "   → PV glpi-pv-hostpath não encontrado"
 kubectl delete pv glpi-data-pv-hostpath 2>/dev/null || echo "   → PV glpi-data-pv-hostpath não encontrado"
 kubectl delete pv glpi-config-pv-hostpath 2>/dev/null || echo "   → PV glpi-config-pv-hostpath não encontrado"
 kubectl delete pv glpi-files-pv-hostpath 2>/dev/null || echo "   → PV glpi-files-pv-hostpath não encontrado"
-
-echo "🗑️  Removendo namespace GLPI..."
-kubectl delete namespace glpi --ignore-not-found=true
 
 echo "🧹 Limpando dados no sistema de arquivos..."
 sudo rm -rf /home/dsm/cluster/applications/glpi/ 2>/dev/null || echo "   → Diretórios não encontrados ou já removidos"

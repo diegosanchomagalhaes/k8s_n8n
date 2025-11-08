@@ -1,39 +1,38 @@
 #!/bin/bash
-
-# Script para deletar todos os volumes (PVs e PVCs) do n8n
-# Usado quando é necessário recriar volumes com configurações diferentes
-
 set -e
 
-echo "🗑️ Deletando volumes do n8n..."
-
-# Cores para output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-echo -e "${YELLOW}======== [1/4] Parando deployment n8n ========${NC}"
-kubectl scale deployment n8n --replicas=0 -n n8n 2>/dev/null || echo "Deployment n8n não encontrado ou já parado"
-
-echo -e "${YELLOW}======== [2/4] Deletando PVCs n8n ========${NC}"
-kubectl delete pvc n8n-pvc -n n8n 2>/dev/null || echo "PVC n8n-pvc não encontrado"
-kubectl delete pvc n8n-data-pvc -n n8n 2>/dev/null || echo "PVC n8n-data-pvc não encontrado"
-
-echo -e "${YELLOW}======== [3/4] Deletando PVs n8n ========${NC}"
-kubectl delete pv n8n-pv-hostpath 2>/dev/null || echo "PV n8n-pv-hostpath não encontrado"
-kubectl delete pv n8n-data-pv-hostpath 2>/dev/null || echo "PV n8n-data-pv-hostpath não encontrado"
-
-echo -e "${YELLOW}======== [4/4] Verificando limpeza ========${NC}"
-echo "PVs restantes relacionados ao n8n:"
-kubectl get pv | grep n8n || echo "Nenhum PV do n8n encontrado ✅"
-
-echo "PVCs restantes no namespace n8n:"
-kubectl get pvc -n n8n || echo "Nenhum PVC no namespace n8n ✅"
-
-echo -e "${GREEN}🎉 Volumes do n8n deletados com sucesso!${NC}"
+echo "======== Removendo Volumes Persistentes do n8n ========"
 echo ""
-echo -e "${YELLOW}💡 Próximos passos:${NC}"
-echo "1. Corrigir os caminhos nos arquivos n8n-pv-hostpath.yaml"
-echo "2. Executar: ./k8s/apps/n8n/scripts/1.deploy-n8n.sh"
-echo "3. Ou usar: ./k8s/apps/n8n/scripts/3.start-n8n.sh"
+echo "⚠️  ATENÇÃO: Esta operação removerá TODOS os dados do n8n!"
+echo "⚠️  Isso inclui:"
+echo "   → Configurações personalizadas"
+echo "   → Workflows criados"
+echo "   → Credenciais salvas"
+echo "   → Dados de aplicação"
+echo ""
+
+read -p "🤔 Tem certeza que deseja continuar? (digite 'SIM' para confirmar): " confirm
+
+if [ "$confirm" != "SIM" ]; then
+    echo "❌ Operação cancelada pelo usuário"
+    exit 0
+fi
+
+echo ""
+echo "🗑️  Parando deployment n8n..."
+kubectl scale deployment n8n --replicas=0 -n n8n 2>/dev/null || echo "   → Deployment n8n não encontrado ou já parado"
+
+echo "🗑️  Removendo PVCs (Persistent Volume Claims)..."
+kubectl delete pvc n8n-pvc -n n8n 2>/dev/null || echo "   → PVC n8n-pvc não encontrado"
+kubectl delete pvc n8n-data-pvc -n n8n 2>/dev/null || echo "   → PVC n8n-data-pvc não encontrado"
+
+echo "🗑️  Removendo PVs (Persistent Volumes)..."
+kubectl delete pv n8n-pv-hostpath 2>/dev/null || echo "   → PV n8n-pv-hostpath não encontrado"
+kubectl delete pv n8n-data-pv-hostpath 2>/dev/null || echo "   → PV n8n-data-pv-hostpath não encontrado"
+
+echo "🧹 Limpando dados no sistema de arquivos..."
+sudo rm -rf /home/dsm/cluster/applications/n8n/ 2>/dev/null || echo "   → Diretórios não encontrados ou já removidos"
+
+echo ""
+echo "✅ Volumes do n8n removidos com sucesso!"
+echo "� Para recriar o ambiente, execute: ./1.deploy-n8n.sh"

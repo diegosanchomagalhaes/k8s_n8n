@@ -18,7 +18,7 @@ kubectl apply -f ./k8s/apps/grafana/grafana-pv-hostpath.yaml
 echo "======== [4/9] Criando PVCs Grafana (Persistent Volume Claims) ========"
 kubectl apply -f ./k8s/apps/grafana/grafana-pvc.yaml
 
-echo "======== [5/9] Verificando dependências (PostgreSQL) ========"
+echo "======== [5/9] Verificando dependências (PostgreSQL e Redis) ========"
 echo "  → Verificando PostgreSQL..."
 if ! kubectl get pods -n postgres -l app=postgres 2>/dev/null | grep -q "Running"; then
     echo "❌ PostgreSQL não está rodando no namespace 'postgres'"
@@ -26,6 +26,14 @@ if ! kubectl get pods -n postgres -l app=postgres 2>/dev/null | grep -q "Running
     exit 1
 fi
 echo "  ✅ PostgreSQL OK"
+
+echo "  → Verificando Redis..."
+if ! kubectl get pods -n redis -l app=redis 2>/dev/null | grep -q "Running"; then
+    echo "❌ Redis não está rodando no namespace 'redis'"
+    echo "📝 Execute: cd infra/scripts && ./10.start-infra.sh"
+    exit 1
+fi
+echo "  ✅ Redis OK"
 
 echo "======== [6/9] Criando database 'grafana' no PostgreSQL ========"
 # Criar database grafana se não existir (Grafana usará credenciais postgres admin do secret)
@@ -66,7 +74,8 @@ echo "🎉 Acesse: https://grafana.local.127.0.0.1.nip.io:8443"
 echo "🔐 Login: admin / admin (altere na primeira execução)"
 echo "🔒 TLS/HTTPS habilitado via cert-manager"
 echo "🗄️ PostgreSQL database configurado (credenciais no secret)"
-echo "📊 HPA configurado para auto-scaling"
+echo "� Redis cache e sessions configurados (DB 1)"
+echo "�📊 HPA configurado para auto-scaling"
 echo ""
 echo "⚠️  IMPORTANTE: Use a porta 8443 para acesso HTTPS"
 echo "   Cluster k3d mapeia 443 -> 8443 no host"

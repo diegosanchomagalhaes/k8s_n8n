@@ -182,7 +182,7 @@ spec:
               mountPath: /etc/prometheus
       containers:
         - name: prometheus
-          image: prom/prometheus:v3.6.0
+          image: prom/prometheus:v3.7.3
           securityContext:
             runAsUser: 65534
             runAsGroup: 65534

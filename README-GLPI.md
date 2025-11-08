@@ -6,7 +6,7 @@ Este diretório contém a configuração completa do GLPI (Gestionnaire libre de
 
 - **Versão**: 11.0.1
 - **Base de Dados**: MariaDB 12.0.2 (suporte oficial GLPI)
-- **Cache**: Redis 8.2.2 (database 2, compartilhado)
+- **Cache**: Redis 8.2.3 (database 2, compartilhado)
 - **Persistência**: hostPath (dados preservados)
 - **SSL/TLS**: Certificados automáticos via cert-manager
 - **Monitoramento**: Probes de health check
@@ -25,7 +25,7 @@ Este diretório contém a configuração completa do GLPI (Gestionnaire libre de
 └─────────────────┘    └──────────────┘    └─────────────────────┘
                               │
                        ┌──────────────────┐
-                       │  Redis 8.2.2     │
+                       │  Redis 8.2.3     │
                        │  Database: 2      │
                        │  (Cache/Sessions) │
                        └──────────────────┘
@@ -89,8 +89,14 @@ glpi/
 cd scripts/
 
 # Deploy completo
+# O script automaticamente:
+# 1. Cria a database 'glpi' no MariaDB (se não existir)
+# 2. Concede permissões ao usuário 'mariadb'
+# 3. Faz deploy de todos os recursos (PV, PVC, Deployment, Service, Ingress, HPA)
 ./1.deploy-glpi.sh
 ```
+
+**🔧 Novidade:** O script de deploy agora cria automaticamente a database e permissões **antes** do deployment, seguindo o padrão do Grafana. O init container no deployment serve como backup/redundância.
 
 ## 🔧 Gerenciamento
 
@@ -173,11 +179,26 @@ Já adicionado ao `/etc/hosts`:
 
 ### Banco de Dados
 
-- **Tipo**: MariaDB 12.0.2
+**MariaDB 12.0.2:**
+
 - **Database**: `glpi`
 - **Host**: `mariadb.mariadb.svc.cluster.local`
 - **Porta**: 3306
+- **User**: `mariadb`
 - **Compatibilidade**: Oficial GLPI MySQL/MariaDB
+
+**Redis Cache (Database 2):**
+
+- **Host**: `redis.redis.svc.cluster.local`
+- **Porta**: 6379
+- **Database**: `2` (DB2 exclusively for GLPI)
+- **Purpose**: Cache de sessões, configurações e dados temporários
+- **Variables**:
+  - `GLPI_CACHE_REDIS_HOST`: redis.redis.svc.cluster.local
+  - `GLPI_CACHE_REDIS_PORT`: 6379
+  - `GLPI_CACHE_REDIS_DB`: 2
+
+> 📝 **Redis Database**: GLPI utiliza **Redis DB2** exclusivamente para cache e sessões. Este database é separado dos outros aplicativos (n8n=DB0, Grafana=DB1, Prometheus=DB3).
 
 ## 🔐 **Permissões e Configuração**
 

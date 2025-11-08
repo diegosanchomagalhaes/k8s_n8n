@@ -40,7 +40,7 @@ spec:
               command:
                 - sh
                 - -c
-                - "mariadb -u$MYSQL_USER -p$MYSQL_PASSWORD -e 'SELECT 1'"
+                - "mariadb -uroot -p$MYSQL_ROOT_PASSWORD -e 'SELECT 1'"
             initialDelaySeconds: 30
             timeoutSeconds: 5
           readinessProbe:
@@ -48,7 +48,7 @@ spec:
               command:
                 - sh
                 - -c
-                - "mariadb -u$MYSQL_USER -p$MYSQL_PASSWORD -e 'SELECT 1'"
+                - "mariadb -uroot -p$MYSQL_ROOT_PASSWORD -e 'SELECT 1'"
             initialDelaySeconds: 10
             timeoutSeconds: 2
           resources:

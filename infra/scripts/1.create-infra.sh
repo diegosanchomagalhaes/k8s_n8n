@@ -17,9 +17,9 @@ echo "======== [3/4] Instalando cert-manager ========"
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.0/cert-manager.yaml
 
 echo "[INFO] Aguardando pods do cert-manager ficarem prontos..."
-kubectl wait --for=condition=available --timeout=300s deployment/cert-manager -n cert-manager
-kubectl wait --for=condition=available --timeout=300s deployment/cert-manager-cainjector -n cert-manager  
-kubectl wait --for=condition=available --timeout=300s deployment/cert-manager-webhook -n cert-manager
+kubectl wait --for=condition=available --timeout=120s deployment/cert-manager -n cert-manager
+kubectl wait --for=condition=available --timeout=120s deployment/cert-manager-cainjector -n cert-manager  
+kubectl wait --for=condition=available --timeout=120s deployment/cert-manager-webhook -n cert-manager
 
 # ClusterIssuer self-signed (para TLS local)
 echo "[INFO] Aplicando ClusterIssuer self-signed..."
@@ -35,10 +35,10 @@ echo "[INFO] Aguardando PostgreSQL ficar pronto..."
 kubectl rollout status statefulset/postgres -n postgres
 
 echo "======== [5/5] Subindo MariaDB ========"
-kubectl apply -f infra/mariadb/mariadb-deployment.yaml
 kubectl apply -f infra/mariadb/mariadb-pv-hostpath.yaml
 kubectl apply -f infra/mariadb/mariadb-pvc.yaml
 kubectl apply -f infra/mariadb/mariadb-secret-admin.yaml
+kubectl apply -f infra/mariadb/mariadb-deployment.yaml
 
 echo "[INFO] Aguardando MariaDB ficar pronto..."
 kubectl rollout status statefulset/mariadb -n mariadb

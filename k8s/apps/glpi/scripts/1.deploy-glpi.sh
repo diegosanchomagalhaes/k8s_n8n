@@ -21,14 +21,14 @@ kubectl apply -f ./k8s/apps/glpi/glpi-pv-hostpath.yaml
 echo "======== [4/8] Criando PVCs GLPI (Persistent Volume Claims) ========"
 kubectl apply -f ./k8s/apps/glpi/glpi-pvc.yaml
 
-echo "======== [5/8] Verificando dependências (PostgreSQL + Redis) ========"
-echo "  → Verificando PostgreSQL..."
-if ! kubectl get pods -n postgres -l app=postgres 2>/dev/null | grep -q "Running"; then
-    echo "❌ PostgreSQL não está rodando no namespace 'postgres'"
+echo "======== [5/9] Verificando dependências (MariaDB e Redis) ========"
+echo "  → Verificando MariaDB..."
+if ! kubectl get pods -n mariadb -l app=mariadb 2>/dev/null | grep -q "Running"; then
+    echo "❌ MariaDB não está rodando no namespace 'mariadb'"
     echo "📝 Execute: cd infra/scripts && ./10.start-infra.sh"
     exit 1
 fi
-echo "  ✅ PostgreSQL OK"
+echo "  ✅ MariaDB OK"
 
 echo "  → Verificando Redis..."
 if ! kubectl get pods -n redis -l app=redis 2>/dev/null | grep -q "Running"; then
@@ -38,11 +38,13 @@ if ! kubectl get pods -n redis -l app=redis 2>/dev/null | grep -q "Running"; the
 fi
 echo "  ✅ Redis OK"
 
-echo "======== [6/9] Criando database 'glpi' no PostgreSQL ========"
-# Criar database glpi se não existir (GLPI usará credenciais postgres admin do secret)
-kubectl exec -n postgres postgres-0 -- psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'glpi'" | grep -q 1 || \
-kubectl exec -n postgres postgres-0 -- psql -U postgres -c "CREATE DATABASE glpi;"
-echo "  ✅ Database 'glpi' criado (usando credenciais postgres admin do secret)"
+echo "======== [6/9] Criando database 'glpi' no MariaDB ========"
+# Criar database glpi se não existir
+kubectl exec -n mariadb mariadb-0 -- mariadb -uroot -pmariadb_root -e "CREATE DATABASE IF NOT EXISTS glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || echo "Database já existe ou foi criada"
+
+# Conceder permissões ao usuário mariadb
+kubectl exec -n mariadb mariadb-0 -- mariadb -uroot -pmariadb_root -e "GRANT ALL PRIVILEGES ON glpi.* TO 'mariadb'@'%'; FLUSH PRIVILEGES;" 2>/dev/null
+echo "  ✅ Database 'glpi' criado e permissões concedidas (usando credenciais root do MariaDB)"
 
 echo "======== [7/9] Criando TLS Certificate ========"
 kubectl apply -f ./k8s/apps/glpi/glpi-certificate.yaml

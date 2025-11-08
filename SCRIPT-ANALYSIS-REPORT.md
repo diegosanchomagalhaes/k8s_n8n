@@ -2,23 +2,27 @@
 
 ## 🔍 SCRIPTS ANALISADOS
 
-### ✅ **Infraestrutura (infra/scripts/)** - 15 scripts
+### ✅ **Infraestrutura (infra/scripts/)** - 19 scripts
 
 - **1.create-infra.sh** ✅ CORRIGIDO (namespace postgres, StorageClass, hosts internos)
 - **2.destroy-infra.sh** ✅ OK (já atualizado com nova estrutura applications/)
-- **3.create-cluster.sh** ✅ OK
-- **4.delete-cluster.sh** ✅ OK
-- **5.create-postgres.sh** ✅ OK
+- **3.create-cluster.sh** ✅ OK (cria cluster k3d com configuração)
+- **4.delete-cluster.sh** ✅ OK (remove cluster k3d)
+- **5.create-postgres.sh** ✅ OK (cria PostgreSQL com hostPath PV)
 - **6.delete-postgres.sh** ✅ CORRIGIDO (referência a arquivos PV hostPath)
-- **7.create-cert-manager.sh** ✅ OK
-- **8.delete-cert-manager.sh** ✅ OK
+- **7.create-cert-manager.sh** ✅ OK (instala cert-manager para TLS)
+- **8.delete-cert-manager.sh** ✅ OK (remove cert-manager)
 - **9.setup-directories.sh** ✅ CORRIGIDO (estrutura applications/ em vez de pvc/)
 - **10.start-infra.sh** ✅ CORRIGIDO (mensagens de output atualizadas)
-- **11.create-redis.sh** ✅ OK
+- **11.create-redis.sh** ✅ OK (cria Redis com hostPath PV)
 - **12.delete-redis.sh** ✅ CORRIGIDO (referência a arquivos PV hostPath)
-- **13.configure-hostpath.sh** ✅ OK
-- **14.clean-cluster-data.sh** ✅ OK
-- **15.test-persistence.sh** ✅ ADICIONADO (teste automatizado de persistência)
+- **13.configure-hostpath.sh** ✅ OK (configura permissões hostPath)
+- **14.clean-cluster-data.sh** ✅ NOVO (drop de databases PostgreSQL/MariaDB - requer cluster rodando)
+- **15.clean-cluster-pvc.sh** ✅ NOVO (limpeza de filesystem - requer cluster parado)
+- **16.create-mariadb.sh** ✅ OK (cria MariaDB)
+- **17.delete-mariadb.sh** ✅ OK (remove MariaDB)
+- **18.destroy-all.sh** ✅ NOVO (orquestra destruição completa: drop DB → destroy cluster → clean filesystem)
+- **19.test-persistence.sh** ✅ OK (teste automatizado de persistência)
 
 ### ✅ **n8n (k8s/apps/n8n/scripts/)** - 6 scripts
 
@@ -70,6 +74,30 @@
 - ✅ Adicionadas informações sobre hostPath mapping
 - ✅ Listagem clara dos diretórios de dados persistentes
 
+### 5. **Script 14.clean-cluster-data.sh** (NOVO)
+
+- ✅ Drop de databases PostgreSQL (n8n, grafana, prometheus)
+- ✅ Drop de database MariaDB (glpi)
+- ✅ Requer cluster rodando
+- ✅ Usado na Etapa 1 do destroy-all.sh
+
+### 6. **Script 15.clean-cluster-pvc.sh** (NOVO)
+
+- ✅ Limpeza de filesystem (PVs/PVCs/dados hostPath)
+- ✅ Requer cluster parado (após destroy)
+- ✅ Usa sudo para remover diretórios protegidos
+- ✅ Usado na Etapa 3 do destroy-all.sh
+
+### 7. **Script 18.destroy-all.sh** (NOVO - ORQUESTRADOR)
+
+- ✅ Executa destruição completa na ordem correta:
+  1. **Etapa 1**: Drop de databases (14.clean-cluster-data.sh)
+  2. **Etapa 2**: Destroy da infraestrutura (2.destroy-infra.sh)
+  3. **Etapa 3**: Limpeza de filesystem (15.clean-cluster-pvc.sh)
+- ✅ Auto-confirmação com "SIM"
+- ✅ Avisa sobre necessidade de senha sudo
+- ✅ Validação entre etapas
+
 ## 📊 ESTADO ATUAL
 
 ### ✅ **Arquitetura de Persistência**
@@ -102,16 +130,28 @@
 - ✅ **n8n**: hostPath persistente → sobrevive ao destroy cluster
 - ✅ **Grafana**: hostPath persistente → sobrevive ao destroy cluster
 
-## 🧪 PRÓXIMOS PASSOS
+## 🧪 FLUXO DE TRABALHO RECOMENDADO
 
-### 1. **Teste de Persistência**
+### 1. **Destruição Completa do Ambiente**
 
 ```bash
-# Executar teste completo
-./test-persistence.sh
+# Opção 1: Executar tudo de uma vez (RECOMENDADO)
+./infra/scripts/18.destroy-all.sh
+
+# Opção 2: Passo a passo (para depuração)
+./infra/scripts/14.clean-cluster-data.sh  # Drop databases
+./infra/scripts/2.destroy-infra.sh        # Destroy cluster
+./infra/scripts/15.clean-cluster-pvc.sh   # Clean filesystem
 ```
 
-### 2. **Validação Manual**
+### 2. **Teste de Persistência**
+
+```bash
+# Executar teste completo automatizado
+./infra/scripts/19.test-persistence.sh
+```
+
+### 3. **Validação Manual**
 
 ```bash
 # Verificar dados atuais
@@ -129,16 +169,38 @@ ls -la /home/dsm/cluster/applications/
 # Verificar acesso com dados preservados
 # - n8n: workflows existentes devem estar lá
 # - Grafana: configurações devem estar preservadas
+# - GLPI: instalação limpa sem erros de upgrade
 ```
 
 ## 🎯 STATUS FINAL
 
-✅ **TODOS OS 26 SCRIPTS ANALISADOS E ATUALIZADOS**
+✅ **TODOS OS 19 SCRIPTS DE INFRAESTRUTURA ANALISADOS E ATUALIZADOS**
 ✅ **Consistência com arquitetura applications/**
 ✅ **Referências hostPath corretas**
-✅ **Namespaces corretos (postgres, redis, n8n, grafana)**
+✅ **Namespaces corretos (postgres, mariadb, redis, n8n, grafana, prometheus, glpi)**
 ✅ **Mensagens de output atualizadas**
-✅ **Pronto para teste de persistência**
+✅ **Scripts de limpeza completa criados (14, 15, 18)**
+✅ **Fluxo de destroy-all documentado e testado**
+✅ **Pronto para deploy limpo**
+
+## 🔄 ORDEM DE EXECUÇÃO CORRETA
+
+### Para Destruição Completa:
+
+```
+18.destroy-all.sh
+  └─> 14.clean-cluster-data.sh (DROP databases com cluster rodando)
+  └─> 2.destroy-infra.sh (Destroy cluster)
+  └─> 15.clean-cluster-pvc.sh (Clean filesystem com cluster parado)
+```
+
+### Para Criação:
+
+```
+start-all.sh
+  └─> 10.start-infra.sh (Cria cluster + PostgreSQL + MariaDB + Redis + cert-manager)
+  └─> deploy de cada app (n8n, grafana, prometheus, glpi)
+```
 
 ---
 

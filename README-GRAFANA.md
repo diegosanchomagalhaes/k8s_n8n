@@ -1,15 +1,15 @@
 # Grafana - Monitoramento e Observabilidade
 
-> 🔍 **Dashboards e Métricas**: Grafana v12.2 com PostgreSQL, TLS automático e auto-scaling para monitoramento completo da infraestrutura.
+> 🔍 **Dashboards e Métricas**: Grafana v12.2.1 com PostgreSQL, TLS automático e auto-scaling para monitoramento completo da infraestrutura.
 
-[![Grafana](https://img.shields.io/badge/Grafana-12.2-orange)](https://grafana.com/)
+[![Grafana](https://img.shields.io/badge/Grafana-12.2.1-orange)](https://grafana.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.34.1-blue)](https://kubernetes.io/)
 [![cert-manager](https://img.shields.io/badge/cert--manager-v1.19.0-green)](https://cert-manager.io/)
 
 ## 🎯 **Status Atual - Grafana Completo**
 
-- ✅ **Grafana 12.2**: Interface web para monitoramento
+- ✅ **Grafana 12.2.1**: Interface web para monitoramento
 - ✅ **PostgreSQL Integration**: Database dedicado 'grafana'
 - ✅ **HTTPS/TLS**: Certificados automáticos via cert-manager
 - ✅ **Auto-scaling**: HPA configurado (1-3 replicas)
@@ -105,7 +105,7 @@ Grafana Stack
 │                     k3d Cluster                        │
 ├─────────────────────────────────────────────────────────┤
 │  Namespace: grafana                                     │
-│  ├── 🔍 Grafana (12.2)                                │
+│  ├── 🔍 Grafana (12.2.1)                                │
 │  ├── 💾 PVCs: grafana-pvc (10Gi) + grafana-data (5Gi) │
 │  └── 🔐 Secrets: DB credentials + admin auth           │
 ├─────────────────────────────────────────────────────────┤
@@ -119,13 +119,24 @@ Grafana Stack
 
 ## ⚙️ **Configuração**
 
-### **🗄️ Database**
+### **🗄️ Database & Cache**
+
+**PostgreSQL:**
 
 - **Database**: `grafana`
 - **User**: `grafana`
 - **Host**: `postgres.postgres.svc.cluster.local:5432`
 - **SSL**: Disabled (internal cluster communication)
 - **Max Connections**: 300
+
+**Redis Cache (Database 1):**
+
+- **Host**: `redis.redis.svc.cluster.local:6379`
+- **Database**: `1` (DB1 exclusively for Grafana)
+- **Purpose**: Cache de sessões, configurações e queries
+- **Connection**: `redis://redis.redis.svc.cluster.local:6379?db=1`
+
+> 📝 **Redis Database**: Grafana utiliza **Redis DB1** exclusivamente para cache e sessões. Este database é separado dos outros aplicativos (n8n=DB0, GLPI=DB2, Prometheus=DB3).
 
 ### **🔐 Autenticação**
 

@@ -20,10 +20,10 @@
 
 ### Características do Deploy
 
-- **Versão**: n8n 1.114.4
+- **Versão**: n8n 1.118.2
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
-- **Cache**: Redis 8.2.2 (performance otimizada)
+- **Cache**: Redis 8.2.3 (performance otimizada)
 - **Persistência**: hostPath em `/home/dsm/cluster/pvc/n8n` (TRUE PaaS)
 - **Acesso**: HTTPS via Traefik Ingress
 - **Scaling**: HPA (Horizontal Pod Autoscaler)
@@ -39,7 +39,7 @@ k8s/apps/n8n/
 ├── n8n-namespace.yaml          # Namespace dedicado
 ├── n8n-secret-db.yaml          # Credenciais completas (DB + Redis)
 ├── n8n-secret-db.yaml.template # Template seguro
-├── n8n-deployment.yaml         # Deployment n8n 1.114.4
+├── n8n-deployment.yaml         # Deployment n8n 1.118.2
 ├── n8n-service.yaml           # Service ClusterIP
 ├── n8n-hpa.yaml               # Auto-scaling (CPU + Memória)
 ├── n8n-certificate.yaml       # Certificado TLS automático
@@ -83,12 +83,21 @@ metadata:
   namespace: n8n
 type: Opaque
 stringData:
-  DB_POSTGRESDB_HOST: postgres.default.svc.cluster.local
+  # PostgreSQL Configuration
+  DB_POSTGRESDB_HOST: postgres.postgres.svc.cluster.local
   DB_POSTGRESDB_PORT: "5432"
   DB_POSTGRESDB_DATABASE: n8n
   DB_POSTGRESDB_USER: postgres
   DB_POSTGRESDB_PASSWORD: YOUR_POSTGRES_ADMIN_PASSWORD_HERE
+
+  # Redis Configuration (Database 0 - dedicated for n8n)
+  QUEUE_BULL_REDIS_HOST: redis.redis.svc.cluster.local
+  QUEUE_BULL_REDIS_PORT: "6379"
+  QUEUE_BULL_REDIS_PASSWORD: YOUR_REDIS_PASSWORD_HERE
+  QUEUE_BULL_REDIS_DB: "0" # DB0 exclusively for n8n queue and cache
 ```
+
+> 📝 **Redis Database**: n8n utiliza **Redis DB0** exclusivamente para filas (Bull Queue) e cache. Este database é separado dos outros aplicativos (Grafana=DB1, GLPI=DB2, Prometheus=DB3).
 
 ### Deployment Configuration
 
@@ -96,7 +105,7 @@ stringData:
 
 ```yaml
 env:
-  # Database
+  # Database PostgreSQL
   - name: DB_TYPE
     value: postgresdb
   - name: DB_POSTGRESDB_HOST
@@ -104,6 +113,30 @@ env:
       secretKeyRef:
         name: n8n-db-secret
         key: DB_POSTGRESDB_HOST
+
+  # Redis Cache & Queue (DB0)
+  - name: N8N_CACHE_BACKEND
+    value: "redis"
+  - name: QUEUE_BULL_REDIS_HOST
+    valueFrom:
+      secretKeyRef:
+        name: n8n-db-secret
+        key: QUEUE_BULL_REDIS_HOST
+  - name: QUEUE_BULL_REDIS_PORT
+    valueFrom:
+      secretKeyRef:
+        name: n8n-db-secret
+        key: QUEUE_BULL_REDIS_PORT
+  - name: QUEUE_BULL_REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: n8n-db-secret
+        key: QUEUE_BULL_REDIS_PASSWORD
+  - name: QUEUE_BULL_REDIS_DB
+    valueFrom:
+      secretKeyRef:
+        name: n8n-db-secret
+        key: QUEUE_BULL_REDIS_DB # = "0"
 
   # Network
   - name: N8N_HOST

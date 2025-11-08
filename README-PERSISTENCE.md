@@ -23,24 +23,41 @@ k3d cluster create --volume "/home/dsm/cluster:/home/dsm/cluster@all"
 ```
 /home/dsm/cluster/
 ├── postgresql/
-│   └── data/              # PostgreSQL 16 - Bancos: n8n, grafana
+│   └── data/                     # PostgreSQL 16 - Bancos: n8n, grafana, prometheus
+├── mariadb/
+│   └── data/                     # MariaDB 12.0.2 - Banco: glpi
 ├── redis/
-│   └── appendonlydir/     # Redis AOF - Cache persistente
-└── pvc/
-    ├── n8n/               # n8n workflows e configurações
-    └── grafana/           # Dashboards e configurações
+│   └── appendonlydir/            # Redis 8.2.3 AOF - Cache (DB0-DB3)
+├── applications/
+│   ├── n8n/
+│   │   ├── data/                 # n8n workflows
+│   │   └── user-data/            # n8n user files
+│   ├── grafana/
+│   │   ├── data/                 # Grafana dashboards
+│   │   └── plugins-dashboards/   # Grafana plugins
+│   ├── prometheus/
+│   │   ├── data/                 # Prometheus TSDB
+│   │   └── config/               # Prometheus configs
+│   └── glpi/
+│       ├── data/                 # GLPI app data
+│       ├── config/               # GLPI configs
+│       └── files/                # GLPI uploads
+└── pvc/                          # PVCs dinâmicos
 ```
 
 ## 🔄 **Validação de Persistência - TESTADO**
 
 ### **Todos os Serviços Validados**
 
-| Serviço        | Status | Localização Host                    | Teste Executado          |
-| -------------- | ------ | ----------------------------------- | ------------------------ |
-| **PostgreSQL** | ✅     | `/home/dsm/cluster/postgresql/data` | ✅ Restart testado       |
-| **Redis**      | ✅     | `/home/dsm/cluster/redis`           | ✅ **RECÉM VALIDADO**    |
-| **n8n**        | ✅     | `/home/dsm/cluster/pvc/n8n`         | ✅ Workflows preservados |
-| **Grafana**    | ✅     | `/home/dsm/cluster/pvc/grafana`     | ✅ Dashboards mantidos   |
+| Serviço        | Status | Localização Host                            | Teste Executado          |
+| -------------- | ------ | ------------------------------------------- | ------------------------ |
+| **PostgreSQL** | ✅     | `/home/dsm/cluster/postgresql/data`         | ✅ Restart testado       |
+| **MariaDB**    | ✅     | `/home/dsm/cluster/mariadb/data`            | ✅ Restart testado       |
+| **Redis**      | ✅     | `/home/dsm/cluster/redis`                   | ✅ Validado AOF          |
+| **n8n**        | ✅     | `/home/dsm/cluster/applications/n8n`        | ✅ Workflows preservados |
+| **Grafana**    | ✅     | `/home/dsm/cluster/applications/grafana`    | ✅ Dashboards mantidos   |
+| **Prometheus** | ✅     | `/home/dsm/cluster/applications/prometheus` | ✅ TSDB preservado       |
+| **GLPI**       | ✅     | `/home/dsm/cluster/applications/glpi`       | ✅ Dados mantidos        |
 
 ### **🧪 Teste de Persistência Redis (Exemplo)**
 
@@ -94,12 +111,15 @@ kubectl exec -n redis redis-yyy -- redis-cli get teste-persistencia
 
 ## 📋 **Templates Disponíveis**
 
-| Template                                             | Arquivo Gerado              | Serviço    |
-| ---------------------------------------------------- | --------------------------- | ---------- |
-| `infra/postgres/postgres-pv-hostpath.yaml.template`  | `postgres-pv-hostpath.yaml` | PostgreSQL |
-| `infra/redis/redis-pv-hostpath.yaml.template`        | `redis-pv-hostpath.yaml`    | Redis      |
-| `k8s/apps/n8n/n8n-pv-hostpath.yaml.template`         | `n8n-pv-hostpath.yaml`      | n8n        |
-| `k8s/apps/grafana/grafana-pv-hostpath.yaml.template` | `grafana-pv-hostpath.yaml`  | Grafana    |
+| Template                                                   | Arquivo Gerado                | Serviço    |
+| ---------------------------------------------------------- | ----------------------------- | ---------- |
+| `infra/postgres/postgres-pv-hostpath.yaml.template`        | `postgres-pv-hostpath.yaml`   | PostgreSQL |
+| `infra/mariadb/mariadb-pv-hostpath.yaml.template`          | `mariadb-pv-hostpath.yaml`    | MariaDB    |
+| `infra/redis/redis-pv-hostpath.yaml.template`              | `redis-pv-hostpath.yaml`      | Redis      |
+| `k8s/apps/n8n/n8n-pv-hostpath.yaml.template`               | `n8n-pv-hostpath.yaml`        | n8n        |
+| `k8s/apps/grafana/grafana-pv-hostpath.yaml.template`       | `grafana-pv-hostpath.yaml`    | Grafana    |
+| `k8s/apps/prometheus/prometheus-pv-hostpath.yaml.template` | `prometheus-pv-hostpath.yaml` | Prometheus |
+| `k8s/apps/glpi/glpi-pv-hostpath.yaml.template`             | `glpi-pv-hostpath.yaml`       | GLPI       |
 
 ## 🔄 **Como Funciona**
 
@@ -158,7 +178,7 @@ spec:
 
 ```bash
 # Script automático que testa persistência completa
-./infra/scripts/15.test-persistence.sh
+./infra/scripts/19.test-persistence.sh
 ```
 
 ### **Teste Manual**

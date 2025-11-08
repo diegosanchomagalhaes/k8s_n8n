@@ -27,9 +27,11 @@ spec:
           env:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          envFrom:
-            - secretRef:
-                name: postgres-admin-secret
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-admin-secret
+                  key: postgres-password
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data

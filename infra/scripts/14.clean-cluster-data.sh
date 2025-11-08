@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# 🧹 Script para limpar dados persistentes do cluster
-# Uso: ./infra/scripts/14.clean-cluster-data.sh
+###############################################################################
+# Script: 14.clean-cluster-data.sh
+# Descrição: Remove databases do PostgreSQL e MariaDB
+#            ⚠️ REQUER CLUSTER RODANDO
+# Autor: DevOps Team
+# Data: 2025-01-06
+###############################################################################
 
 set -e
 
@@ -12,77 +17,94 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Definir diretório base
-CLUSTER_BASE="/home/dsm/cluster"
-
-echo -e "${YELLOW}🧹 Limpeza de Dados Persistentes do Cluster${NC}"
-echo "========================================"
+echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║   LIMPEZA DE DATABASES - POSTGRESQL E MARIADB            ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}⚠️  ATENÇÃO: Este script irá:${NC}"
+echo -e "${YELLOW}   - Dropar databases: n8n, grafana, prometheus (PostgreSQL)${NC}"
+echo -e "${YELLOW}   - Dropar database: glpi (MariaDB)${NC}"
+echo ""
+echo -e "${RED}⚠️  TODOS OS DADOS DOS BANCOS SERÃO PERDIDOS!${NC}"
 echo ""
 
-# Verificar se o diretório existe
-if [ ! -d "$CLUSTER_BASE" ]; then
-    echo -e "${YELLOW}⚠️  Diretório $CLUSTER_BASE não existe. Nada para limpar.${NC}"
-    exit 0
-fi
-
-# Mostrar o que será removido
-echo -e "${BLUE}📁 Conteúdo atual em $CLUSTER_BASE:${NC}"
-ls -la "$CLUSTER_BASE" 2>/dev/null || echo "Diretório vazio"
-echo ""
-
-# Confirmar ação
-echo -e "${RED}⚠️  ATENÇÃO: Esta ação irá remover TODOS os dados persistentes!${NC}"
-echo -e "${RED}   - PostgreSQL databases${NC}"
-echo -e "${RED}   - Redis cache data${NC}"
-echo -e "${RED}   - n8n workflows${NC}"
-echo -e "${RED}   - Grafana dashboards${NC}"
-echo ""
-echo -e "${YELLOW}Esta ação é IRREVERSÍVEL!${NC}"
-echo ""
-
-read -p "🤔 Tem certeza que deseja continuar? (digite 'SIM' para confirmar): " confirm
-
-if [ "$confirm" != "SIM" ]; then
-    echo -e "${GREEN}✅ Operação cancelada pelo usuário.${NC}"
+# Confirmação
+read -p "Deseja continuar? (SIM/não): " confirmacao
+if [[ "$confirmacao" != "SIM" ]]; then
+    echo -e "${YELLOW}❌ Operação cancelada pelo usuário${NC}"
     exit 0
 fi
 
 echo ""
-echo -e "${YELLOW}🗑️  Removendo dados persistentes...${NC}"
+echo -e "${BLUE}🔍 Verificando se o cluster está rodando...${NC}"
 
-# Remover subdiretórios específicos um por um
-if [ -d "$CLUSTER_BASE/postgresql" ]; then
-    echo -e "${BLUE}   🐘 Removendo dados PostgreSQL...${NC}"
-    sudo rm -rf "$CLUSTER_BASE/postgresql"
+# Verificar se o cluster está rodando
+if ! kubectl cluster-info &>/dev/null; then
+    echo -e "${RED}❌ ERRO: Cluster não está rodando!${NC}"
+    echo -e "${YELLOW}💡 Este script requer que o cluster esteja ativo.${NC}"
+    echo -e "${YELLOW}   Execute primeiro: ./infra/scripts/9.start-infra.sh${NC}"
+    exit 1
 fi
 
-if [ -d "$CLUSTER_BASE/redis" ]; then
-    echo -e "${BLUE}   🔴 Removendo dados Redis...${NC}"
-    sudo rm -rf "$CLUSTER_BASE/redis"
+echo -e "${GREEN}✅ Cluster detectado e rodando${NC}"
+
+###############################################################################
+# DROP DE DATABASES
+###############################################################################
+
+echo ""
+echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${BLUE}  DROPANDO BANCOS DE DADOS${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
+
+# PostgreSQL - Drop databases
+echo ""
+echo -e "${YELLOW}📦 Dropando databases do PostgreSQL...${NC}"
+
+# Verificar se o PostgreSQL está rodando
+if kubectl get pod -n postgres postgres-0 &>/dev/null; then
+    echo -e "${BLUE}  → Dropando database 'n8n'...${NC}"
+    kubectl exec -n postgres postgres-0 -- psql -U postgres -c "DROP DATABASE IF EXISTS n8n;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'n8n' não existe ou já foi removido${NC}"
+    
+    echo -e "${BLUE}  → Dropando database 'grafana'...${NC}"
+    kubectl exec -n postgres postgres-0 -- psql -U postgres -c "DROP DATABASE IF EXISTS grafana;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'grafana' não existe ou já foi removido${NC}"
+    
+    echo -e "${BLUE}  → Dropando database 'prometheus'...${NC}"
+    kubectl exec -n postgres postgres-0 -- psql -U postgres -c "DROP DATABASE IF EXISTS prometheus;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'prometheus' não existe ou já foi removido${NC}"
+    
+    echo -e "${GREEN}✅ Databases PostgreSQL removidos${NC}"
+else
+    echo -e "${YELLOW}⚠️  PostgreSQL não está rodando. Pulando...${NC}"
 fi
 
-if [ -d "$CLUSTER_BASE/pvc" ]; then
-    echo -e "${BLUE}   📁 Removendo PVCs (n8n, grafana)...${NC}"
-    sudo rm -rf "$CLUSTER_BASE/pvc"
+# MariaDB - Drop database
+echo ""
+echo -e "${YELLOW}📦 Dropando database do MariaDB...${NC}"
+
+# Obter senha do MariaDB
+MARIADB_PASSWORD=$(kubectl get secret -n mariadb mariadb-admin-secret -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' 2>/dev/null | base64 -d || echo "")
+
+if [ -n "$MARIADB_PASSWORD" ] && kubectl get pod -n mariadb mariadb-0 &>/dev/null; then
+    echo -e "${BLUE}  → Dropando database 'glpi'...${NC}"
+    kubectl exec -n mariadb mariadb-0 -- mariadb -uroot -p"$MARIADB_PASSWORD" -e "DROP DATABASE IF EXISTS glpi;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'glpi' não existe ou já foi removido${NC}"
+    
+    echo -e "${GREEN}✅ Database MariaDB removido${NC}"
+else
+    echo -e "${YELLOW}⚠️  MariaDB não está rodando ou secret não encontrado. Pulando...${NC}"
 fi
 
-# Remover outros diretórios que possam existir
-for dir in "$CLUSTER_BASE"/*; do
-    if [ -d "$dir" ]; then
-        echo -e "${BLUE}   🗂️  Removendo $(basename "$dir")...${NC}"
-        sudo rm -rf "$dir"
-    fi
-done
-
-# Manter o diretório base
-mkdir -p "$CLUSTER_BASE"
-sudo chown dsm:dsm "$CLUSTER_BASE"
+###############################################################################
+# FINALIZAÇÃO
+###############################################################################
 
 echo ""
-echo -e "${GREEN}✅ Limpeza concluída!${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}✅ DATABASES REMOVIDOS COM SUCESSO!${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${BLUE}📋 Próximos passos:${NC}"
-echo "   1. ./infra/scripts/9.setup-directories.sh  # Recriar estrutura"
-echo "   2. ./start-all.sh                          # Deploy completo"
+echo -e "${BLUE}💡 Próximos passos:${NC}"
+echo -e "${BLUE}   1. Execute: ./infra/scripts/2.destroy-infra.sh${NC}"
+echo -e "${BLUE}   2. Execute: ./infra/scripts/15.clean-cluster-pvc.sh${NC}"
+echo -e "${BLUE}   3. Execute: ./start-all.sh${NC}"
+echo -e "${BLUE}   OU execute tudo de uma vez: ./infra/scripts/18.destroy-all.sh${NC}"
 echo ""
-echo -e "${YELLOW}💡 O diretório $CLUSTER_BASE está agora limpo e pronto para novo deploy.${NC}"

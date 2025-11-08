@@ -72,7 +72,7 @@ k3d cluster create --volume "/home/dsm/cluster:/home/dsm/cluster@all"
 - **Resources**: Transações ACID, relações tradicionais
 - **fsGroup**: 999 (systemd-coredump)
 
-### **⚡ Redis 8.2.2** (Cache Compartilhado)
+### **⚡ Redis 8.2.3** (Cache Compartilhado)
 
 - **Database 0**: N8N cache e sessões
 - **Database 1**: Grafana cache
@@ -98,7 +98,7 @@ k3d cluster create --volume "/home/dsm/cluster:/home/dsm/cluster@all"
 2. ✅ Configura estrutura de diretórios hostPath com permissões corretas
 3. ✅ Deploy PostgreSQL 16 com persistência hostPath (20Gi) - fsGroup: 999
 4. ✅ Deploy MariaDB 12.0.2 com persistência hostPath (20Gi) - fsGroup: 999
-5. ✅ Deploy Redis 8.2.2 com persistência hostPath (5Gi)
+5. ✅ Deploy Redis 8.2.3 com persistência hostPath (5Gi)
 6. ✅ Instala cert-manager v1.19.0
 7. ✅ Configura ClusterIssuer para certificados self-signed
 8. ✅ Verifica saúde de todos os componentes e permissões

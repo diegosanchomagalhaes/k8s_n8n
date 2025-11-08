@@ -20,10 +20,10 @@
 
 ### Características do Deploy
 
-- **Versão**: Prometheus v3.6.0
+- **Versão**: Prometheus v3.7.3
 - **Namespace**: `prometheus`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
-- **Cache**: Redis 8.2.2 (database 3, para métricas)
+- **Cache**: Redis 8.2.3 (database 3, para métricas)
 - **Persistência**: hostPath em `/home/dsm/cluster/applications/prometheus/` (TRUE PaaS)
 - **Acesso**: HTTPS via Traefik Ingress
 - **Scaling**: HPA (Horizontal Pod Autoscaler)
@@ -40,7 +40,7 @@ k8s/apps/prometheus/
 ├── prometheus-namespace.yaml          # Namespace dedicado
 ├── prometheus-secret-db.yaml          # Credenciais completas (DB + Redis)
 ├── prometheus-secret-db.yaml.template # Template seguro
-├── prometheus-deployment.yaml         # Deployment Prometheus v3.6.0
+├── prometheus-deployment.yaml         # Deployment Prometheus v3.7.3
 ├── prometheus-service.yaml           # Service ClusterIP
 ├── prometheus-hpa.yaml               # Auto-scaling (CPU + Memória)
 ├── prometheus-certificate.yaml       # Certificado TLS automático
@@ -70,7 +70,7 @@ k8s/apps/prometheus/
                        └──────────────┘
                               │
                        ┌──────────────────┐
-                       │  Redis 8.2.2     │
+                       │  Redis 8.2.3     │
                        │  Database: 3      │
                        │  (Cache/Métricas) │
                        └──────────────────┘
@@ -98,14 +98,31 @@ cp k8s/apps/prometheus/prometheus-secret-db.yaml.template \
 nano k8s/apps/prometheus/prometheus-secret-db.yaml
 ```
 
-**Substitua os valores:**
-```yaml
-# PostgreSQL Database Configuration
-DB_POSTGRESDB_PASSWORD: SUA_SENHA_POSTGRES_AQUI
+**Template do Secret:**
 
-# Redis Cache Configuration  
-REDIS_PASSWORD: SUA_SENHA_REDIS_AQUI
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-db-secret
+  namespace: prometheus
+type: Opaque
+stringData:
+  # PostgreSQL Configuration (shared infrastructure)
+  DB_POSTGRESDB_HOST: postgres.postgres.svc.cluster.local
+  DB_POSTGRESDB_PORT: "5432"
+  DB_POSTGRESDB_DATABASE: prometheus
+  DB_POSTGRESDB_USER: postgres
+  DB_POSTGRESDB_PASSWORD: SUA_SENHA_POSTGRES_AQUI
+
+  # Redis Cache Configuration (Database 3 - dedicated for Prometheus)
+  REDIS_HOST: redis.redis.svc.cluster.local
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: SUA_SENHA_REDIS_AQUI
+  REDIS_DB: "3" # DB3 exclusively for Prometheus metrics cache
 ```
+
+> 📝 **Redis Database**: Prometheus utiliza **Redis DB3** exclusivamente para cache de métricas e queries. Este database é separado dos outros aplicativos (n8n=DB0, Grafana=DB1, GLPI=DB2).
 
 ### 2. **Configuração do Prometheus.yml**
 
@@ -119,6 +136,7 @@ O arquivo `prometheus.yml` é criado automaticamente pelo init container com:
 ### 3. **Configuração de Targets**
 
 Para adicionar novos targets, edite a configuração em:
+
 ```bash
 # Acessar o pod
 kubectl exec -n prometheus -it prometheus-xxx -- sh
@@ -169,12 +187,12 @@ curl -k https://prometheus.local.127.0.0.1.nip.io:8443/-/ready
 
 ### **URLs de Acesso**
 
-| Serviço | URL | Descrição |
-|---------|-----|-----------|
-| **Prometheus UI** | https://prometheus.local.127.0.0.1.nip.io:8443 | Interface web principal |
-| **API** | https://prometheus.local.127.0.0.1.nip.io:8443/api/v1/ | API para consultas |
-| **Metrics** | https://prometheus.local.127.0.0.1.nip.io:8443/metrics | Métricas do próprio Prometheus |
-| **Health** | https://prometheus.local.127.0.0.1.nip.io:8443/-/healthy | Health check |
+| Serviço           | URL                                                      | Descrição                      |
+| ----------------- | -------------------------------------------------------- | ------------------------------ |
+| **Prometheus UI** | https://prometheus.local.127.0.0.1.nip.io:8443           | Interface web principal        |
+| **API**           | https://prometheus.local.127.0.0.1.nip.io:8443/api/v1/   | API para consultas             |
+| **Metrics**       | https://prometheus.local.127.0.0.1.nip.io:8443/metrics   | Métricas do próprio Prometheus |
+| **Health**        | https://prometheus.local.127.0.0.1.nip.io:8443/-/healthy | Health check                   |
 
 ### **Queries Úteis (PromQL)**
 
@@ -278,6 +296,7 @@ kubectl scale deployment prometheus --replicas=1 -n prometheus
 ### **Problemas Comuns**
 
 #### **1. Pod não inicia**
+
 ```bash
 # Verificar logs
 kubectl logs -n prometheus -l app=prometheus
@@ -287,6 +306,7 @@ kubectl exec -n prometheus prometheus-xxx -- ls -la /prometheus
 ```
 
 #### **2. Targets down**
+
 ```bash
 # Verificar targets na UI
 # Status → Targets
@@ -296,6 +316,7 @@ kubectl exec -n prometheus prometheus-xxx -- nslookup kubernetes.default
 ```
 
 #### **3. Performance lenta**
+
 ```bash
 # Verificar uso de recursos
 kubectl top pods -n prometheus
@@ -305,6 +326,7 @@ kubectl exec -n prometheus prometheus-xxx -- du -sh /prometheus
 ```
 
 #### **4. Configuração inválida**
+
 ```bash
 # Validar configuração
 kubectl exec -n prometheus prometheus-xxx -- promtool check config /etc/prometheus/prometheus.yml
@@ -372,16 +394,19 @@ data:
 ## 📚 Recursos Adicionais
 
 ### **Documentação Oficial**
+
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [PromQL Basics](https://prometheus.io/docs/prometheus/latest/querying/basics/)
 - [Kubernetes SD](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config)
 
 ### **Integrações**
+
 - **Grafana**: Conectar como data source
 - **Alertmanager**: Para alertas avançados
 - **Exporters**: Node exporter, kube-state-metrics
 
 ### **Monitoramento da Stack**
+
 - **Prometheus**: Monitora toda a infraestrutura K8s
 - **Grafana**: Visualização das métricas coletadas
 - **N8N**: Workflows podem usar métricas Prometheus
@@ -389,4 +414,4 @@ data:
 
 ---
 
-> 📊 **Prometheus v3.6.0** executando no cluster k3d local com integração completa Kubernetes e PostgreSQL para metadados.
+> 📊 **Prometheus v3.7.3** executando no cluster k3d local com integração completa Kubernetes e PostgreSQL para metadados.

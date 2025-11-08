@@ -70,6 +70,10 @@ spec:
 
               echo "Creating database 'glpi' if it doesn't exist..."
               mariadb -h $MYSQL_HOST -P $MYSQL_TCP_PORT -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PWD -e "CREATE DATABASE IF NOT EXISTS glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+              echo "Granting permissions to user '$MYSQL_USER' on database 'glpi'..."
+              mariadb -h $MYSQL_HOST -P $MYSQL_TCP_PORT -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PWD -e "GRANT ALL PRIVILEGES ON glpi.* TO '$MYSQL_USER'@'%'; FLUSH PRIVILEGES;"
+
               echo "Database setup complete!"
 
         - name: fix-permissions
@@ -147,7 +151,7 @@ spec:
             - name: GLPI_INSTALL
               value: "true"
             - name: GLPI_UPDATE
-              value: "true"
+              value: "false"
             - name: GLPI_REMOVE_INSTALLER
               value: "false"
             - name: TZ

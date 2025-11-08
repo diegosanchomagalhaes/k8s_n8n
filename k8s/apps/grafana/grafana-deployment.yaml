@@ -46,7 +46,7 @@ spec:
 
       containers:
         - name: grafana
-          image: grafana/grafana:12.2
+          image: grafana/grafana:12.2.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -133,7 +133,7 @@ spec:
           # Resources
           resources:
             requests:
-              memory: "128Mi"
+              memory: "256Mi"
               cpu: "100m"
             limits:
               memory: "512Mi"

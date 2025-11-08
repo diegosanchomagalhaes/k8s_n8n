@@ -16,8 +16,13 @@
 O WSL2 precisa ser configurado adequadamente para rodar:
 
 - **k3d cluster** (1 server + 2 agents)
-- **PostgreSQL** com dados persistentes
-- **n8n** com processamento de workflows
+- **PostgreSQL 16** com databases (n8n, grafana, prometheus)
+- **MariaDB 12.0.2** com database (glpi)
+- **Redis 8.2.3** cache compartilhado (DB0-DB3)
+- **n8n 1.118.2** com processamento de workflows
+- **Grafana 12.2.1** dashboards e monitoramento
+- **Prometheus v3.7.3** métricas e alertas
+- **GLPI 11.0.1** service desk e inventário
 - **cert-manager** e **Traefik**
 
 ## ⚙️ Configuração Recomendada
@@ -121,11 +126,13 @@ swap=8GB           # Swap menor (performance)
 ```ini
 # ==================================================================
 # WSL2 - Configuração K3D Local
-# Otimizada para k3d + PostgreSQL + n8n
+# Otimizada para k3d + PostgreSQL + MariaDB + Redis + 4 aplicações
+# (n8n, Grafana, Prometheus, GLPI)
 # ==================================================================
 
 [wsl2]
-# Memória: 50% da RAM total (ajuste conforme seu hardware)
+# Memória: 50-60% da RAM total (ajuste conforme seu hardware)
+# Recomendado: mínimo 8GB para rodar todas as 4 aplicações
 memory=8GB
 
 # CPU: 50-75% dos cores disponíveis

@@ -3,10 +3,11 @@
 # Script de conveniência para inicializar infraestrutura + aplicações
 # Para usar: ./start-all.sh [aplicacao]
 # Exemplos:
-#   ./start-all.sh          # Inicializa infra + todas as aplicações
-#   ./start-all.sh n8n      # Inicializa infra + somente n8n
-#   ./start-all.sh grafana  # Inicializa infra + somente grafana
-#   ./start-all.sh glpi     # Inicializa infra + somente glpi
+#   ./start-all.sh              # Inicializa infra + todas as aplicações
+#   ./start-all.sh n8n          # Inicializa infra + somente n8n
+#   ./start-all.sh grafana      # Inicializa infra + somente grafana
+#   ./start-all.sh prometheus   # Inicializa infra + somente prometheus
+#   ./start-all.sh glpi         # Inicializa infra + somente glpi
 
 echo "🚀 Iniciando ambiente completo..."
 
@@ -23,7 +24,7 @@ cd "$PROJECT_ROOT"
 SPECIFIC_APP="$1"
 
 # Lista de aplicações disponíveis
-AVAILABLE_APPS=("n8n" "grafana" "glpi")
+AVAILABLE_APPS=("n8n" "grafana" "prometheus" "glpi")
 
 # =================================================================
 # FUNÇÃO: VERIFICAR SE APLICAÇÃO TEM DADOS PERSISTENTES
@@ -219,6 +220,9 @@ for app in "${AVAILABLE_APPS[@]}"; do
             "grafana")
                 echo "   ✅ grafana - https://grafana.local.127.0.0.1.nip.io:8443"
                 ;;
+            "prometheus")
+                echo "   ✅ prometheus - https://prometheus.local.127.0.0.1.nip.io:8443"
+                ;;
             "glpi")
                 echo "   ✅ glpi - https://glpi.local.127.0.0.1.nip.io:8443"
                 ;;
@@ -233,9 +237,10 @@ done
 
 echo ""
 echo "💡 Para iniciar aplicações específicas:"
-echo "   ./start-all.sh n8n      # Somente n8n"
-echo "   ./start-all.sh grafana  # Somente grafana"
-echo "   ./start-all.sh glpi     # Somente glpi"
+echo "   ./start-all.sh n8n          # Somente n8n"
+echo "   ./start-all.sh grafana      # Somente grafana"
+echo "   ./start-all.sh prometheus   # Somente prometheus"
+echo "   ./start-all.sh glpi         # Somente glpi"
 echo ""
 echo "🔄 Comportamento inteligente:"
 echo "   • Se existem dados em /home/dsm/cluster/applications/[app]/ → Preserva dados existentes"
