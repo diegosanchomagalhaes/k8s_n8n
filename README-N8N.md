@@ -23,12 +23,29 @@
 - **Versão**: n8n 1.118.2
 - **Namespace**: `n8n`
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
-- **Cache**: Redis 8.2.3 (performance otimizada)
-- **Persistência**: hostPath em `/home/dsm/cluster/pvc/n8n` (TRUE PaaS)
-- **Acesso**: HTTPS via Traefik Ingress
+- **Cache**: Redis 8.2.3 (DB0 - performance otimizada)
+- **Persistência**: hostPath em `/home/dsm/cluster/applications/n8n/` (TRUE PaaS)
+- **Acesso**: HTTPS via Ingress (porta 8443)
 - **Scaling**: HPA (Horizontal Pod Autoscaler)
 - **Certificados**: TLS via cert-manager
 - **Volume Strategy**: Separated PV/PVC architecture
+
+### 🔐 Acesso à Aplicação
+
+| Item            | Valor                                                      | Observação                                  |
+| --------------- | ---------------------------------------------------------- | ------------------------------------------- |
+| 🌐 **URL**      | `https://n8n.local.127.0.0.1.nip.io:8443`                  | Usar sempre HTTPS na porta 8443             |
+| 👤 **Usuário**  | _Criar no primeiro acesso_                                 | Registro obrigatório na primeira execução   |
+| 🔑 **Senha**    | _Definir no cadastro_                                      | Escolha uma senha forte (min. 8 caracteres) |
+| 💾 **Database** | PostgreSQL 16 (`postgres.postgres.svc.cluster.local:5432`) | Database: `n8n`                             |
+| 🗄️ **Cache**    | Redis 8.2.3 (`redis.redis.svc.cluster.local:6379`)         | Database: DB0                               |
+
+> ⚠️ **IMPORTANTE**:
+>
+> - Na primeira execução, você será solicitado a criar uma conta de administrador
+> - Use um e-mail válido para recuperação de senha
+> - A porta 8443 é necessária (k3d mapeia 443→8443)
+> - Aceite o certificado self-signed no navegador
 
 ## 🏗 Arquitetura
 

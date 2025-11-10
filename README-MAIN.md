@@ -70,13 +70,35 @@ nano k8s/apps/glpi/glpi-secret-db.yaml             # GLPI (MariaDB + Redis)
 
 ### **🌐 Acesso Rápido**
 
-- **n8n 1.118.2**: https://n8n.local.127.0.0.1.nip.io:8443 (Configure primeiro usuário)
-- **Grafana 12.2.1**: https://grafana.local.127.0.0.1.nip.io:8443 (admin/Admin_Grafana_2025_K8s_10243769)
-- **Prometheus v3.7.3**: https://prometheus.local.127.0.0.1.nip.io:8443
-- **GLPI 11.0.1**: https://glpi.local.127.0.0.1.nip.io:8443
-- **PostgreSQL 16**: localhost:30432 (databases: n8n, grafana, prometheus)
-- **MariaDB 12.0.2**: localhost:30306 (database: glpi)
-- **Redis 8.2.3**: redis.redis.svc.cluster.local:6379 (DB0=n8n, DB1=grafana, DB2=glpi, DB3=prometheus)
+| Aplicação             | URL de Acesso                                  | Credenciais Padrão                            | Status |
+| --------------------- | ---------------------------------------------- | --------------------------------------------- | ------ |
+| **n8n 1.118.2**       | https://n8n.local.127.0.0.1.nip.io:8443        | 👤 Criar conta no 1º acesso                   | ✅     |
+| **Grafana 12.2.1**    | https://grafana.local.127.0.0.1.nip.io:8443    | 👤 `admin` / 🔑 `admin` ⚠️ Troque no 1º login | ✅     |
+| **Prometheus v3.7.3** | https://prometheus.local.127.0.0.1.nip.io:8443 | 🔓 Sem autenticação (acesso direto)           | ✅     |
+| **GLPI 11.0.1**       | https://glpi.local.127.0.0.1.nip.io:8443       | 👤 `glpi` / 🔑 `glpi` (Super Admin)           | ✅     |
+
+#### 🔐 **Credenciais GLPI Adicionais**
+
+| Perfil             | Usuário     | Senha      | Permissões                        |
+| ------------------ | ----------- | ---------- | --------------------------------- |
+| 🟢 Admin (Técnico) | `tech`      | `tech`     | Gerenciar tickets, inventário     |
+| 🟡 Usuário Normal  | `normal`    | `normal`   | Criar/visualizar tickets próprios |
+| 🟠 Post-only       | `post-only` | `postonly` | Apenas visualização               |
+
+#### 🗄️ **Databases (Acesso Interno)**
+
+| Serviço            | Endpoint                             | Credenciais                       | Databases                                      |
+| ------------------ | ------------------------------------ | --------------------------------- | ---------------------------------------------- |
+| **PostgreSQL 16**  | `localhost:30432`                    | `postgres` / `postgres_admin`     | n8n, grafana, prometheus                       |
+| **MariaDB 12.0.2** | `localhost:30306`                    | `root` / `mariadb_root`           | glpi                                           |
+| **Redis 8.2.3**    | `redis.redis.svc.cluster.local:6379` | `Redis_Shared_Cache_K8s_2024_...` | DB0=n8n, DB1=grafana, DB2=glpi, DB3=prometheus |
+
+> ⚠️ **IMPORTANTE**:
+>
+> - Use sempre **porta 8443** para HTTPS (k3d mapeia 443→8443)
+> - **Altere todas as senhas padrão** imediatamente após primeiro acesso
+> - Aceite o certificado self-signed no navegador
+> - Para acesso de outras máquinas, substitua `127.0.0.1` pelo IP do host WSL2
 
 ---
 

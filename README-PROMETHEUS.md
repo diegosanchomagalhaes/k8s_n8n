@@ -25,11 +25,33 @@
 - **Banco de dados**: PostgreSQL (infraestrutura compartilhada)
 - **Cache**: Redis 8.2.3 (database 3, para métricas)
 - **Persistência**: hostPath em `/home/dsm/cluster/applications/prometheus/` (TRUE PaaS)
-- **Acesso**: HTTPS via Traefik Ingress
+- **Acesso**: HTTPS via Ingress (porta 8443)
 - **Scaling**: HPA (Horizontal Pod Autoscaler)
 - **Certificados**: TLS via cert-manager
 - **Volume Strategy**: Separated PV/PVC architecture
 - **TSDB**: Time Series Database nativo com retenção de 30 dias
+
+### 🔐 Acesso à Aplicação
+
+| Item                | Valor                                                      | Observação                         |
+| ------------------- | ---------------------------------------------------------- | ---------------------------------- |
+| 🌐 **URL**          | `https://prometheus.local.127.0.0.1.nip.io:8443`           | Usar sempre HTTPS na porta 8443    |
+| 👤 **Autenticação** | **🔓 SEM AUTENTICAÇÃO**                                    | Prometheus não possui login padrão |
+| 🔑 **Senha**        | Não requerida                                              | Acesso direto pela URL             |
+| 💾 **Database**     | PostgreSQL 16 (`postgres.postgres.svc.cluster.local:5432`) | Database: `prometheus`             |
+| 🗄️ **Cache**        | Redis 8.2.3 (`redis.redis.svc.cluster.local:6379`)         | Database: DB3                      |
+| 📊 **TSDB**         | `/prometheus` (volume persistente)                         | Time Series Database para métricas |
+
+> ⚠️ **IMPORTANTE**:
+>
+> - Prometheus **NÃO possui autenticação nativa** por padrão
+> - Para ambientes de produção, considere adicionar autenticação via:
+>   - Reverse proxy (Nginx, Traefik) com Basic Auth
+>   - OAuth2 Proxy para SSO
+>   - Network Policies do Kubernetes para restringir acesso
+> - A porta 8443 é necessária (k3d mapeia 443→8443)
+> - Aceite o certificado self-signed no navegador
+> - **NÃO exponha Prometheus diretamente na internet pública sem autenticação!**
 
 ## 🏗 Arquitetura
 

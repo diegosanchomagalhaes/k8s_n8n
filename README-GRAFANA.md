@@ -27,6 +27,25 @@
 
 > ⚠️ **Porta 8443**: k3d mapeia `443→8443` para evitar privilégios root
 
+### 🔐 **Credenciais de Acesso Padrão**
+
+| Item            | Valor                                                      | Observação                                                  |
+| --------------- | ---------------------------------------------------------- | ----------------------------------------------------------- |
+| 🌐 **URL**      | `https://grafana.local.127.0.0.1.nip.io:8443`              | Usar sempre HTTPS na porta 8443                             |
+| 👤 **Usuário**  | `admin`                                                    | Usuário administrador padrão                                |
+| 🔑 **Senha**    | `admin`                                                    | **⚠️ ATENÇÃO**: Grafana solicitará troca no primeiro login! |
+| 💾 **Database** | PostgreSQL 16 (`postgres.postgres.svc.cluster.local:5432`) | Database: `grafana`                                         |
+| 🗄️ **Cache**    | Redis 8.2.3 (`redis.redis.svc.cluster.local:6379`)         | Database: DB1 (cache)                                       |
+| 🗄️ **Sessions** | Redis 8.2.3 (`redis.redis.svc.cluster.local:6379`)         | Database: DB1 (sessões)                                     |
+
+> 🔒 **RECOMENDAÇÕES DE SEGURANÇA**:
+>
+> 1. Altere a senha padrão `admin` imediatamente no primeiro login
+> 2. Configure autenticação de dois fatores (2FA) se disponível
+> 3. Crie usuários separados com permissões específicas
+> 4. Use senhas fortes (mínimo 16 caracteres)
+> 5. Aceite o certificado self-signed no navegador
+
 ## 📋 **Sumário**
 
 - [Deploy Rápido](#-deploy-rápido)

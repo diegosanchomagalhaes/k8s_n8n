@@ -159,12 +159,38 @@ Já adicionado ao `/etc/hosts`:
 127.0.0.1    glpi.local.127.0.0.1.nip.io
 ```
 
-### Credenciais Padrão
+### 🔐 Credenciais de Acesso Padrão
 
-- **Admin**: `glpi` / `glpi`
-- **Super Admin**: `admin` / `admin`
+GLPI fornece **4 perfis de usuário** diferentes para testes e configuração inicial:
 
-⚠️ **IMPORTANTE**: Altere as credenciais após primeiro login!
+| Perfil                 | Usuário     | Senha      | Descrição                          | Permissões                                       |
+| ---------------------- | ----------- | ---------- | ---------------------------------- | ------------------------------------------------ |
+| 🔵 **Super Admin**     | `glpi`      | `glpi`     | Administrador principal do sistema | Acesso total (configuração, usuários, entidades) |
+| 🟢 **Admin (Técnico)** | `tech`      | `tech`     | Administrador técnico              | Gerenciar tickets, inventário, usuários          |
+| 🟡 **Usuário Normal**  | `normal`    | `normal`   | Usuário padrão do sistema          | Criar/visualizar tickets próprios                |
+| 🟠 **Post-only**       | `post-only` | `postonly` | Visualização limitada              | Apenas visualizar tickets                        |
+
+#### 🌐 **URL de Acesso**
+
+```
+https://glpi.local.127.0.0.1.nip.io:8443
+```
+
+#### 💾 **Conexões Backend**
+
+| Serviço         | Host                                     | Credenciais                                           | Database |
+| --------------- | ---------------------------------------- | ----------------------------------------------------- | -------- |
+| **MariaDB**     | `mariadb.mariadb.svc.cluster.local:3306` | `root` / `mariadb_root`                               | `glpi`   |
+| **Redis Cache** | `redis.redis.svc.cluster.local:6379`     | Senha: `Redis_Shared_Cache_K8s_2024_9105092354952d9a` | DB2      |
+
+> ⚠️ **RECOMENDAÇÃO DE SEGURANÇA CRÍTICA**:
+>
+> 1. **Altere TODAS as senhas padrão** imediatamente após primeiro acesso!
+> 2. Desabilite ou remova usuários de teste que não serão utilizados
+> 3. Configure políticas de senha forte no GLPI (Configuração → Geral → Autenticação)
+> 4. Implemente autenticação LDAP/AD para ambientes corporativos
+> 5. Revise permissões de cada perfil de acordo com suas necessidades
+> 6. Aceite o certificado self-signed no navegador (porta 8443 obrigatória)
 
 ## 💾 Persistência de Dados
 
