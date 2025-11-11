@@ -1,46 +1,34 @@
 #!/bin/bash
 
-# Script de destruição da infraestrutura base
-# Destroi: cluster k3d, PostgreSQL, cert-manager
-# MANTÉM: Dados persistentes em hostPath (PostgreSQL, Redis, PVCs)
+###############################################################################
+# Script: 2.destroy-infra.sh
+# Descrição: Destroi o cluster k3d (que automaticamente remove todos os namespaces)
+# MANTÉM: Dados persistentes em hostPath
+# Nota: Deletar o cluster remove TODOS os namespaces automaticamente:
+#       - n8n, grafana, glpi, prometheus, zabbix
+#       - postgres, mariadb, redis
+#       - cert-manager
+###############################################################################
 
-echo "🗑️ Destruindo infraestrutura base (mantendo dados persistentes)..."
+echo "🗑️ Destruindo cluster k3d (remove todos os namespaces automaticamente)..."
 
 # Detectar diretório do projeto automaticamente
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "======== [1/4] Removendo aplicações (se ainda existirem) ========"
-kubectl delete namespace n8n --ignore-not-found
-kubectl delete namespace grafana --ignore-not-found
+echo ""
+echo "📋 O que será removido:"
+echo "   ✅ Cluster k3d completo"
+echo "   ✅ TODOS os namespaces (apps + infra)"
+echo "   ✅ Todos os pods, services, deployments, etc"
+echo ""
+echo "💾 O que será PRESERVADO:"
+echo "   📁 /home/dsm/cluster/ (PVs hostPath com dados)"
+echo ""
 
-echo "======== [2/5] Removendo PostgreSQL ========"
-kubectl delete -f infra/postgres/postgres.yaml --ignore-not-found
-kubectl delete -f infra/postgres/postgres-secret-admin.yaml --ignore-not-found
-echo "💾 MANTENDO: PVs e PVCs PostgreSQL (dados preservados)"
-
-echo "======== [3/5] Removendo MariaDB ========"
-kubectl delete -f infra/mariadb/mariadb-deployment.yaml --ignore-not-found
-kubectl delete -f infra/mariadb/mariadb-secret-admin.yaml --ignore-not-found
-echo "💾 MANTENDO: PVs e PVCs MariaDB (dados preservados)"
-
-echo "======== [4/5] Removendo Redis ========"
-kubectl delete -f infra/redis/redis.yaml --ignore-not-found
-kubectl delete -f infra/redis/redis-secret.yaml --ignore-not-found
-echo "💾 MANTENDO: PVs e PVCs Redis (dados preservados)"
-
-echo "======== [5/5] Removendo cert-manager ========"
-# Remover ClusterIssuer primeiro
-kubectl delete -f infra/cert-manager/cluster-issuer-selfsigned.yaml --ignore-not-found
-# Remover namespace cert-manager (isso remove tudo dentro)
-kubectl delete namespace cert-manager --ignore-not-found
-# Remover CRDs e recursos globais do cert-manager
-echo "🗑️  Removendo cert-manager..."
-kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.0/cert-manager.yaml --ignore-not-found
-
-echo "======== [6/6] Removendo cluster k3d ========"
-# Remove o cluster mas dados hostPath são preservados
+echo "======== Removendo cluster k3d ========"
+# Remove o cluster - isso automaticamente remove TODOS os namespaces
 k3d cluster delete k3d-cluster
 
 echo ""
@@ -49,11 +37,17 @@ echo "💾 DADOS PRESERVADOS em:"
 echo "   📁 /home/dsm/cluster/postgresql (databases: postgres, n8n, grafana)"
 echo "   📁 /home/dsm/cluster/mariadb (database: glpi)"
 echo "   📁 /home/dsm/cluster/redis (cache: db0=n8n, db1=grafana, db2=glpi)" 
-echo "   📁 /home/dsm/cluster/applications/n8n/ (configurações e arquivos)"
-echo "   📁 /home/dsm/cluster/applications/grafana/ (dados e logs)"
-echo "   📁 /home/dsm/cluster/applications/glpi/ (dados e logs)"
+echo ""
+echo "🎉 Cluster k3d removido com sucesso!"
+echo ""
+echo "� DADOS PRESERVADOS em /home/dsm/cluster/:"
+echo "   📁 postgresql/ (databases: postgres, n8n, grafana, zabbix, prometheus)"
+echo "   📁 mariadb/ (databases: glpi, zabbix_proxy)"
+echo "   📁 redis/ (cache: db0=n8n, db1=grafana, db2=glpi, db3=prometheus, db4=zabbix)"
+echo "   📁 pvc/zabbix/ (server, web, proxy, snmptraps)"
+echo "   📁 applications/ (n8n, grafana, glpi, prometheus)"
 echo ""
 echo "💡 Para recriar tudo:"
-echo "   ./start-all.sh                    # Infraestrutura + aplicações"
+echo "   ./start-all.sh [app]              # Infraestrutura + aplicação"
 echo "   ./infra/scripts/1.create-infra.sh # Somente infraestrutura"
 echo ""

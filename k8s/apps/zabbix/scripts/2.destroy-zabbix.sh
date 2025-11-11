@@ -17,8 +17,14 @@ kubectl delete -f ./k8s/apps/zabbix/zabbix-ingress.yaml --ignore-not-found
 echo "======== [2/14] Removendo Certificate ========"
 kubectl delete -f ./k8s/apps/zabbix/zabbix-certificate.yaml --ignore-not-found
 
-echo "======== [3/14] Removendo HPA ========"
+echo "======== [3/14] Removendo todos os HPAs (7 componentes) ========"
+kubectl delete -f ./k8s/apps/zabbix/zabbix-server-hpa.yaml --ignore-not-found
 kubectl delete -f ./k8s/apps/zabbix/zabbix-hpa.yaml --ignore-not-found
+kubectl delete -f ./k8s/apps/zabbix/zabbix-proxy-hpa.yaml --ignore-not-found
+kubectl delete -f ./k8s/apps/zabbix/zabbix-agent2-hpa.yaml --ignore-not-found
+kubectl delete -f ./k8s/apps/zabbix/zabbix-agent-classic-hpa.yaml --ignore-not-found
+kubectl delete -f ./k8s/apps/zabbix/zabbix-java-gateway-hpa.yaml --ignore-not-found
+kubectl delete -f ./k8s/apps/zabbix/zabbix-web-service-hpa.yaml --ignore-not-found
 
 echo "======== [4/14] Removendo SNMP Traps ========"
 kubectl delete -f ./k8s/apps/zabbix/zabbix-snmptraps-deployment.yaml --ignore-not-found
@@ -32,12 +38,10 @@ kubectl delete -f ./k8s/apps/zabbix/zabbix-web-service-deployment.yaml --ignore-
 echo "======== [7/14] Removendo Java Gateway ========"
 kubectl delete -f ./k8s/apps/zabbix/zabbix-java-gateway-deployment.yaml --ignore-not-found
 
-echo "======== [8/14] Removendo Agent Classic Deployment + HPA ========"
-kubectl delete -f ./k8s/apps/zabbix/zabbix-agent-classic-hpa.yaml --ignore-not-found
+echo "======== [8/14] Removendo Agent Classic Deployment ========"
 kubectl delete -f ./k8s/apps/zabbix/zabbix-agent-classic-deployment.yaml --ignore-not-found
 
-echo "======== [9/14] Removendo Agent2 Deployment + HPA ========"
-kubectl delete -f ./k8s/apps/zabbix/zabbix-agent2-hpa.yaml --ignore-not-found
+echo "======== [9/14] Removendo Agent2 Deployment ========"
 kubectl delete -f ./k8s/apps/zabbix/zabbix-agent2-deployment.yaml --ignore-not-found
 
 echo "======== [10/14] Removendo Deployments (Server e Web) ========"

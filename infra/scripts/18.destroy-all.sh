@@ -2,12 +2,14 @@
 
 ###############################################################################
 # Script: 18.destroy-all.sh
-# Descrição: Orquestra a destruição completa do ambiente na ordem correta
+# Descrição: Destruição completa e simplificada do ambiente
 #            1. Drop de databases (cluster rodando)
-#            2. Destroy da infraestrutura (destrói cluster)
-#            3. Limpeza de PVs/PVCs/filesystem (cluster parado)
+#            2. Delete cluster k3d (remove TODOS os namespaces automaticamente)
+#            3. Limpeza de filesystem (PVs/PVCs/dados)
 # Autor: DevOps Team
-# Data: 2025-01-06
+# Data: 2025-11-11
+# Nota: Deletar o cluster k3d automaticamente remove TODOS os namespaces,
+#       então não é necessário deletá-los manualmente.
 ###############################################################################
 
 set -e

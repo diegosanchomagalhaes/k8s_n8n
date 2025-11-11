@@ -22,8 +22,8 @@ echo -e "${BLUE}║   LIMPEZA DE DATABASES - POSTGRESQL E MARIADB            ║
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}⚠️  ATENÇÃO: Este script irá:${NC}"
-echo -e "${YELLOW}   - Dropar databases: n8n, grafana, prometheus (PostgreSQL)${NC}"
-echo -e "${YELLOW}   - Dropar database: glpi (MariaDB)${NC}"
+echo -e "${YELLOW}   - Dropar databases: n8n, grafana, prometheus, zabbix (PostgreSQL)${NC}"
+echo -e "${YELLOW}   - Dropar databases: glpi, zabbix_proxy (MariaDB)${NC}"
 echo ""
 echo -e "${RED}⚠️  TODOS OS DADOS DOS BANCOS SERÃO PERDIDOS!${NC}"
 echo ""
@@ -40,10 +40,11 @@ echo -e "${BLUE}🔍 Verificando se o cluster está rodando...${NC}"
 
 # Verificar se o cluster está rodando
 if ! kubectl cluster-info &>/dev/null; then
-    echo -e "${RED}❌ ERRO: Cluster não está rodando!${NC}"
-    echo -e "${YELLOW}💡 Este script requer que o cluster esteja ativo.${NC}"
-    echo -e "${YELLOW}   Execute primeiro: ./infra/scripts/9.start-infra.sh${NC}"
-    exit 1
+    echo -e "${YELLOW}⚠️  Cluster não está rodando - pulando drop de databases${NC}"
+    echo -e "${BLUE}💡 Databases não serão dropados (cluster já foi destruído)${NC}"
+    echo ""
+    echo -e "${GREEN}✅ Limpeza de databases concluída (nada a fazer)${NC}"
+    exit 0
 fi
 
 echo -e "${GREEN}✅ Cluster detectado e rodando${NC}"
@@ -72,6 +73,9 @@ if kubectl get pod -n postgres postgres-0 &>/dev/null; then
     echo -e "${BLUE}  → Dropando database 'prometheus'...${NC}"
     kubectl exec -n postgres postgres-0 -- psql -U postgres -c "DROP DATABASE IF EXISTS prometheus;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'prometheus' não existe ou já foi removido${NC}"
     
+    echo -e "${BLUE}  → Dropando database 'zabbix'...${NC}"
+    kubectl exec -n postgres postgres-0 -- psql -U postgres -c "DROP DATABASE IF EXISTS zabbix;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'zabbix' não existe ou já foi removido${NC}"
+    
     echo -e "${GREEN}✅ Databases PostgreSQL removidos${NC}"
 else
     echo -e "${YELLOW}⚠️  PostgreSQL não está rodando. Pulando...${NC}"
@@ -88,7 +92,10 @@ if [ -n "$MARIADB_PASSWORD" ] && kubectl get pod -n mariadb mariadb-0 &>/dev/nul
     echo -e "${BLUE}  → Dropando database 'glpi'...${NC}"
     kubectl exec -n mariadb mariadb-0 -- mariadb -uroot -p"$MARIADB_PASSWORD" -e "DROP DATABASE IF EXISTS glpi;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'glpi' não existe ou já foi removido${NC}"
     
-    echo -e "${GREEN}✅ Database MariaDB removido${NC}"
+    echo -e "${BLUE}  → Dropando database 'zabbix_proxy'...${NC}"
+    kubectl exec -n mariadb mariadb-0 -- mariadb -uroot -p"$MARIADB_PASSWORD" -e "DROP DATABASE IF EXISTS zabbix_proxy;" 2>/dev/null || echo -e "${YELLOW}    ⚠️  Database 'zabbix_proxy' não existe ou já foi removido${NC}"
+    
+    echo -e "${GREEN}✅ Databases MariaDB removidos${NC}"
 else
     echo -e "${YELLOW}⚠️  MariaDB não está rodando ou secret não encontrado. Pulando...${NC}"
 fi

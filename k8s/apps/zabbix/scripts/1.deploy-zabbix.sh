@@ -72,16 +72,20 @@ kubectl rollout status deployment/zabbix-server -n zabbix --timeout=300s
 echo "======== [13/20] Criando Ingress Zabbix ========"
 kubectl apply -f ./k8s/apps/zabbix/zabbix-ingress.yaml
 
-echo "======== [14/20] Criando HPA Zabbix Web ========"
+echo "======== [14/20] Criando HPAs Zabbix (7 componentes) ========"
+kubectl apply -f ./k8s/apps/zabbix/zabbix-server-hpa.yaml
 kubectl apply -f ./k8s/apps/zabbix/zabbix-hpa.yaml
-
-echo "======== [15/20] Criando Zabbix Agent2 Deployment + HPA ========"
-kubectl apply -f ./k8s/apps/zabbix/zabbix-agent2-deployment.yaml
+kubectl apply -f ./k8s/apps/zabbix/zabbix-proxy-hpa.yaml
 kubectl apply -f ./k8s/apps/zabbix/zabbix-agent2-hpa.yaml
-
-echo "======== [16/20] Criando Zabbix Agent Classic Deployment + HPA ========"
-kubectl apply -f ./k8s/apps/zabbix/zabbix-agent-classic-deployment.yaml
 kubectl apply -f ./k8s/apps/zabbix/zabbix-agent-classic-hpa.yaml
+kubectl apply -f ./k8s/apps/zabbix/zabbix-java-gateway-hpa.yaml
+kubectl apply -f ./k8s/apps/zabbix/zabbix-web-service-hpa.yaml
+
+echo "======== [15/20] Criando Zabbix Agent2 Deployment ========"
+kubectl apply -f ./k8s/apps/zabbix/zabbix-agent2-deployment.yaml
+
+echo "======== [16/20] Criando Zabbix Agent Classic Deployment ========"
+kubectl apply -f ./k8s/apps/zabbix/zabbix-agent-classic-deployment.yaml
 
 echo "======== [17/20] Criando Zabbix Java Gateway ========"
 kubectl apply -f ./k8s/apps/zabbix/zabbix-java-gateway-deployment.yaml
@@ -119,14 +123,19 @@ echo "   Host: redis.redis.svc.cluster.local:6379"
 echo "   DB: 4"
 echo ""
 echo "📊 Componentes implantados (9):"
-echo "   ✅ Zabbix Server (PostgreSQL)"
+echo "   ✅ Zabbix Server (PostgreSQL) - HPA 1-3 pods"
 echo "   ✅ Zabbix Web (Nginx + PHP-FPM) - HPA 1-3 pods"
+echo "   ✅ Zabbix Proxy (MariaDB) - HPA 1-3 pods"
 echo "   ✅ Zabbix Agent2 (porta 10050) - HPA 1-3 pods"
 echo "   ✅ Zabbix Agent Classic (porta 10061) - HPA 1-3 pods"
-echo "   ✅ Zabbix Java Gateway"
-echo "   ✅ Zabbix Web Service"
-echo "   ✅ Zabbix Proxy (MariaDB)"
+echo "   ✅ Zabbix Java Gateway - HPA 1-3 pods"
+echo "   ✅ Zabbix Web Service - HPA 1-3 pods"
 echo "   ✅ Zabbix SNMP Traps"
+echo ""
+echo "⚡ Auto-scaling habilitado:"
+echo "   🔄 7 HPAs configurados (todos exceto SNMP Traps)"
+echo "   📈 Escala: CPU > 70% ou Memória > 80%"
+echo "   📉 Reduz: Após 5min de baixa utilização"
 echo ""
 echo "📊 Status dos componentes:"
 kubectl get pods -n zabbix

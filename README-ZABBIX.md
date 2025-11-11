@@ -10,19 +10,19 @@
 
 ## 🎯 **Status Atual - Zabbix 7.4.5 Completo**
 
-- ✅ **Zabbix Server 7.4.5**: Core de monitoramento com PostgreSQL
+- ✅ **Zabbix Server 7.4.5**: Core de monitoramento com PostgreSQL (HPA 1-3 pods)
 - ✅ **Zabbix Web Frontend**: Interface web com Nginx + PHP-FPM (HPA 1-3 pods)
+- ✅ **Zabbix Proxy**: Monitoramento distribuído com MariaDB (HPA 1-3 pods)
 - ✅ **Zabbix Agent2 (Deployment)**: Agente moderno na porta 10050 (HPA 1-3 pods)
 - ✅ **Zabbix Agent Classic (Deployment)**: Agente legado na porta 10061 (HPA 1-3 pods)
-- ✅ **Zabbix Proxy**: Monitoramento distribuído com MariaDB
+- ✅ **Zabbix Java Gateway**: Monitoramento JMX de aplicações Java (HPA 1-3 pods)
+- ✅ **Zabbix Web Service**: Geração de relatórios PDF e exportação (HPA 1-3 pods)
 - ✅ **SNMP Traps**: Receptor de traps de dispositivos de rede (porta 162 UDP)
-- ✅ **Java Gateway**: Monitoramento JMX de aplicações Java
-- ✅ **Web Service**: Geração de relatórios PDF e exportação
 - ✅ **PostgreSQL Integration**: Database dedicado 'zabbix' (Server + Web)
 - ✅ **MariaDB Integration**: Database dedicado 'zabbix_proxy' (Proxy)
 - ✅ **Redis Cache**: DB4 exclusivo para cache (128M)
 - ✅ **HTTPS/TLS**: Certificados automáticos via cert-manager
-- ✅ **Auto-scaling**: HPA para Web, Agent2 e Agent Classic (1-3 replicas)
+- ✅ **Auto-scaling**: 7 HPAs configurados (todos componentes exceto SNMP Traps)
 - ✅ **hostPath Persistence**: Dados em `/home/dsm/cluster/pvc/zabbix/{server,web,proxy,snmptraps}`
 - ✅ **Security**: Secrets, non-root user, resource limits
 
@@ -132,23 +132,31 @@ Zabbix Stack Empresarial
 ├── 🛡️ Zabbix Server          # Core de monitoramento (port 10051)
 │   ├── PostgreSQL Backend    # Armazenamento de dados
 │   ├── Redis Cache DB4      # Cache de valores e histórico (128M)
-│   └── Pollers/Trappers     # Coleta de métricas (5 pollers, 5 trappers)
+│   ├── Pollers/Trappers     # Coleta de métricas (5 pollers, 5 trappers)
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
 ├── 🌐 Zabbix Web Frontend    # Interface web Nginx+PHP (ports 8080/8443)
 │   ├── PHP 8.2              # Processamento web
 │   ├── PostgreSQL           # Mesmo banco do servidor
-│   └── HPA Auto-scaling     # 1-3 replicas
-├── 📡 Zabbix Agent2          # Deployment escalável com HPA (port 10050)
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
+├── �️ Zabbix Proxy          # Monitoramento distribuído (port 10051)
+│   ├── MariaDB Backend      # Database 'zabbix_proxy'
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
+├── �📡 Zabbix Agent2          # Deployment escalável com HPA (port 10050)
 │   ├── Active Checks        # Envio proativo de métricas
 │   ├── Passive Checks       # Resposta a consultas do servidor
-│   └── HPA Auto-scaling     # 1-3 replicas
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
 ├── 📡 Zabbix Agent Classic   # Deployment escalável com HPA (port 10061)
 │   ├── Active Checks        # Envio proativo de métricas
 │   ├── Passive Checks       # Resposta a consultas do servidor
-│   └── HPA Auto-scaling     # 1-3 replicas
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
 ├── ☕ Java Gateway           # Monitoramento JMX (port 10052)
-│   └── JMX Polling          # Aplicações Java/J2EE
+│   ├── JMX Polling          # Aplicações Java/J2EE
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
 ├── 📄 Web Service           # Relatórios e exportação (port 10053)
-│   └── PDF/Report Engine    # Geração de relatórios
+│   ├── PDF/Report Engine    # Geração de relatórios
+│   └── HPA Auto-scaling     # 1-3 replicas (CPU 70%, Memory 80%)
+├── 📡 SNMP Traps            # Receptor de traps (port 162/UDP)
+│   └── Fixed Deployment     # 1 replica (sem HPA)
 ├── 🗄️ PostgreSQL Database    # Database 'zabbix' com schema completo
 ├── 💾 PVC Storage (7Gi)      # Dados persistentes (server 5Gi + web 2Gi)
 ├── 🔒 TLS Certificate        # HTTPS automático via cert-manager
