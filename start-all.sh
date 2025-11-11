@@ -8,6 +8,7 @@
 #   ./start-all.sh grafana      # Inicializa infra + somente grafana
 #   ./start-all.sh prometheus   # Inicializa infra + somente prometheus
 #   ./start-all.sh glpi         # Inicializa infra + somente glpi
+#   ./start-all.sh zabbix       # Inicializa infra + somente zabbix
 
 echo "🚀 Iniciando ambiente completo..."
 
@@ -24,7 +25,7 @@ cd "$PROJECT_ROOT"
 SPECIFIC_APP="$1"
 
 # Lista de aplicações disponíveis
-AVAILABLE_APPS=("n8n" "grafana" "prometheus" "glpi")
+AVAILABLE_APPS=("n8n" "grafana" "prometheus" "glpi" "zabbix")
 
 # =================================================================
 # FUNÇÃO: VERIFICAR SE APLICAÇÃO TEM DADOS PERSISTENTES

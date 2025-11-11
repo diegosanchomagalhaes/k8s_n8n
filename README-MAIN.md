@@ -57,6 +57,8 @@ cp k8s/apps/prometheus/prometheus-secret-db.yaml.template \
    k8s/apps/prometheus/prometheus-secret-db.yaml
 cp k8s/apps/glpi/glpi-secret-db.yaml.template \
    k8s/apps/glpi/glpi-secret-db.yaml
+cp k8s/apps/zabbix/zabbix-secret-db.yaml.template \
+   k8s/apps/zabbix/zabbix-secret-db.yaml
 
 # 3. Editar e configurar credenciais reais
 nano infra/postgres/postgres-secret-admin.yaml     # PostgreSQL admin
@@ -66,16 +68,18 @@ nano k8s/apps/n8n/n8n-secret-db.yaml              # n8n (PG + Redis)
 nano k8s/apps/grafana/grafana-secret-db.yaml       # Grafana (PG + Redis)
 nano k8s/apps/prometheus/prometheus-secret-db.yaml # Prometheus (PG + Redis)
 nano k8s/apps/glpi/glpi-secret-db.yaml             # GLPI (MariaDB + Redis)
+nano k8s/apps/zabbix/zabbix-secret-db.yaml         # Zabbix (PG + Redis DB4)
 ```
 
 ### **🌐 Acesso Rápido**
 
-| Aplicação             | URL de Acesso                                  | Credenciais Padrão                            | Status |
-| --------------------- | ---------------------------------------------- | --------------------------------------------- | ------ |
-| **n8n 1.118.2**       | https://n8n.local.127.0.0.1.nip.io:8443        | 👤 Criar conta no 1º acesso                   | ✅     |
-| **Grafana 12.2.1**    | https://grafana.local.127.0.0.1.nip.io:8443    | 👤 `admin` / 🔑 `admin` ⚠️ Troque no 1º login | ✅     |
-| **Prometheus v3.7.3** | https://prometheus.local.127.0.0.1.nip.io:8443 | 🔓 Sem autenticação (acesso direto)           | ✅     |
-| **GLPI 11.0.1**       | https://glpi.local.127.0.0.1.nip.io:8443       | 👤 `glpi` / 🔑 `glpi` (Super Admin)           | ✅     |
+| Aplicação             | URL de Acesso                                  | Credenciais Padrão                                | Status   |
+| --------------------- | ---------------------------------------------- | ------------------------------------------------- | -------- |
+| **n8n 1.118.2**       | https://n8n.local.127.0.0.1.nip.io:8443        | 👤 Criar conta no 1º acesso                       | ✅       |
+| **Grafana 12.2.1**    | https://grafana.local.127.0.0.1.nip.io:8443    | 👤 `admin` / 🔑 `admin` ⚠️ Troque no 1º login     | ✅       |
+| **Prometheus v3.7.3** | https://prometheus.local.127.0.0.1.nip.io:8443 | 🔓 Sem autenticação (acesso direto)               | ✅       |
+| **GLPI 11.0.1**       | https://glpi.local.127.0.0.1.nip.io:8443       | 👤 `glpi` / 🔑 `glpi` (Super Admin)               | ✅       |
+| **Zabbix 7.4.5**      | https://zabbix.local.127.0.0.1.nip.io:8443     | 👤 `Admin` / 🔑 `zabbix` ⚠️ ALTERE IMEDIATAMENTE! | 📦 Ready |
 
 #### 🔐 **Credenciais GLPI Adicionais**
 
@@ -87,11 +91,11 @@ nano k8s/apps/glpi/glpi-secret-db.yaml             # GLPI (MariaDB + Redis)
 
 #### 🗄️ **Databases (Acesso Interno)**
 
-| Serviço            | Endpoint                             | Credenciais                       | Databases                                      |
-| ------------------ | ------------------------------------ | --------------------------------- | ---------------------------------------------- |
-| **PostgreSQL 16**  | `localhost:30432`                    | `postgres` / `postgres_admin`     | n8n, grafana, prometheus                       |
-| **MariaDB 12.0.2** | `localhost:30306`                    | `root` / `mariadb_root`           | glpi                                           |
-| **Redis 8.2.3**    | `redis.redis.svc.cluster.local:6379` | `Redis_Shared_Cache_K8s_2024_...` | DB0=n8n, DB1=grafana, DB2=glpi, DB3=prometheus |
+| Serviço            | Endpoint                             | Credenciais                       | Databases                                                  |
+| ------------------ | ------------------------------------ | --------------------------------- | ---------------------------------------------------------- |
+| **PostgreSQL 16**  | `localhost:30432`                    | `postgres` / `postgres_admin`     | n8n, grafana, prometheus, zabbix                           |
+| **MariaDB 12.0.2** | `localhost:30306`                    | `root` / `mariadb_root`           | glpi                                                       |
+| **Redis 8.2.3**    | `redis.redis.svc.cluster.local:6379` | `Redis_Shared_Cache_K8s_2024_...` | DB0=n8n, DB1=grafana, DB2=glpi, DB3=prometheus, DB4=zabbix |
 
 > ⚠️ **IMPORTANTE**:
 >
@@ -134,11 +138,18 @@ k8s_local/
 │       ├── prometheus/         # Monitoramento Prometheus
 │       │   ├── scripts/        # Deploy e manutenção
 │       │   └── *.yaml         # Manifests K8s
-│       └── glpi/               # ITSM e Service Desk
+│       ├── glpi/               # ITSM e Service Desk
+│       │   ├── scripts/        # Deploy e manutenção
+│       │   │   ├── 1.deploy-glpi.sh        # Deploy aplicação
+│       │   │   ├── 2.destroy-glpi.sh       # Remove app (mantém dados)
+│       │   │   └── 4.drop-database-glpi.sh # Limpeza COMPLETA
+│       │   └── *.yaml         # Manifests K8s
+│       └── zabbix/             # Monitoramento Empresarial
 │           ├── scripts/        # Deploy e manutenção
-│           │   ├── 1.deploy-glpi.sh        # Deploy aplicação
-│           │   ├── 2.destroy-glpi.sh       # Remove app (mantém dados)
-│           │   └── 4.drop-database-glpi.sh # Limpeza COMPLETA
+│           │   ├── 1.deploy-zabbix.sh       # Deploy completo
+│           │   ├── 2.destroy-zabbix.sh      # Remove app (mantém dados)
+│           │   ├── 4.drop-database-zabbix.sh # Limpeza database
+│           │   └── 6.delete-volumes-zabbix.sh # Remove volumes
 │           └── *.yaml         # Manifests K8s
 ├── backup/                     # 🗄️ Sistema de Backup
 │   ├── scripts/               # Scripts de backup/restore

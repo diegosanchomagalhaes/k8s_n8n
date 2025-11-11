@@ -1,0 +1,73 @@
+# Zabbix Persistent Volume Claims
+# PVCs para armazenamento persistente do Zabbix
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zabbix-server-pvc
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ""
+  volumeName: zabbix-server-pv
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zabbix-web-pvc
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: web
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: ""
+  volumeName: zabbix-web-pv
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zabbix-proxy-pvc
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: proxy
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+  storageClassName: ""
+  volumeName: zabbix-proxy-pv
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zabbix-snmptraps-pvc
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: snmptraps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+  volumeName: zabbix-snmptraps-pv

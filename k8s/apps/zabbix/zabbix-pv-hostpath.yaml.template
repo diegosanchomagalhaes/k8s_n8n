@@ -1,0 +1,39 @@
+# Zabbix PV Hostpath Template
+# Template para PVs com hostPath - valores serão substituídos pelo script de configuração
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zabbix-server-pv
+  labels:
+    app: zabbix
+    component: server
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: HOSTPATH_PLACEHOLDER/pvc/zabbix/server
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zabbix-web-pv
+  labels:
+    app: zabbix
+    component: web
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: HOSTPATH_PLACEHOLDER/pvc/zabbix/web
+    type: DirectoryOrCreate

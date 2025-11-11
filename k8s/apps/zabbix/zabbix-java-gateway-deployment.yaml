@@ -1,0 +1,78 @@
+# Zabbix Java Gateway Deployment
+# Gateway para monitoramento de aplicações Java via JMX
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zabbix-java-gateway
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: java-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zabbix
+      component: java-gateway
+  template:
+    metadata:
+      labels:
+        app: zabbix
+        component: java-gateway
+    spec:
+      containers:
+        - name: zabbix-java-gateway
+          image: zabbix/zabbix-java-gateway:ubuntu-7.4.5
+          ports:
+            - containerPort: 10052
+              name: java-gateway
+              protocol: TCP
+          env:
+            - name: ZBX_START_POLLERS
+              value: "5"
+            - name: ZBX_TIMEOUT
+              value: "3"
+            - name: ZBX_DEBUGLEVEL
+              value: "3"
+          livenessProbe:
+            tcpSocket:
+              port: 10052
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 10052
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+# Zabbix Java Gateway Service
+# Service para comunicação com o Java Gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: zabbix-java-gateway
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: java-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app: zabbix
+    component: java-gateway
+  ports:
+    - port: 10052
+      targetPort: 10052
+      protocol: TCP
+      name: java-gateway

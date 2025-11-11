@@ -1,0 +1,78 @@
+# Zabbix Persistent Volumes (hostPath)
+# PVs para dados do Zabbix Server e Web Frontend
+# ⚠️ ARQUIVO GERADO AUTOMATICAMENTE - Configurado via script
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zabbix-server-pv
+  labels:
+    app: zabbix
+    component: server
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /home/dsm/cluster/pvc/zabbix/server
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zabbix-web-pv
+  labels:
+    app: zabbix
+    component: web
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /home/dsm/cluster/pvc/zabbix/web
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zabbix-proxy-pv
+  labels:
+    app: zabbix
+    component: proxy
+spec:
+  capacity:
+    storage: 3Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /home/dsm/cluster/pvc/zabbix/proxy
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zabbix-snmptraps-pv
+  labels:
+    app: zabbix
+    component: snmptraps
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /home/dsm/cluster/pvc/zabbix/snmptraps
+    type: DirectoryOrCreate

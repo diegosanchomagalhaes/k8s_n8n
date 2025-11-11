@@ -1,0 +1,186 @@
+# Zabbix Server Deployment
+# Deployment principal do Zabbix Server com PostgreSQL, Redis e configurações de segurança
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zabbix-server
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zabbix
+      component: server
+  template:
+    metadata:
+      labels:
+        app: zabbix
+        component: server
+    spec:
+      securityContext:
+        runAsUser: 1997
+        runAsGroup: 1995
+        fsGroup: 1995
+
+      # Init container para corrigir permissões dos volumes hostPath
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Corrigindo permissões dos volumes para UID/GID 1997:1995..."
+              chown -R 1997:1995 /var/lib/zabbix
+              chmod -R 755 /var/lib/zabbix
+              echo "Permissões corrigidas com sucesso!"
+          volumeMounts:
+            - name: zabbix-server-data
+              mountPath: /var/lib/zabbix
+          securityContext:
+            runAsUser: 0 # Root para poder alterar permissões
+
+      containers:
+        - name: zabbix-server
+          image: zabbix/zabbix-server-pgsql:ubuntu-7.4.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 10051
+              name: zabbix-trapper
+              protocol: TCP
+
+          # Environment variables from Secret
+          env:
+            # PostgreSQL Database Configuration
+            - name: DB_SERVER_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: DB_SERVER_HOST
+            - name: DB_SERVER_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: DB_SERVER_PORT
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: POSTGRES_DB
+
+            # Cache Configuration
+            - name: ZBX_CACHESIZE
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: ZBX_CACHESIZE
+            - name: ZBX_HISTORYCACHESIZE
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: ZBX_HISTORYCACHESIZE
+            - name: ZBX_HISTORYINDEXCACHESIZE
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: ZBX_HISTORYINDEXCACHESIZE
+            - name: ZBX_TRENDCACHESIZE
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: ZBX_TRENDCACHESIZE
+            - name: ZBX_VALUECACHESIZE
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: ZBX_VALUECACHESIZE
+
+            # Server Configuration
+            - name: ZBX_STARTPOLLERS
+              value: "5"
+            - name: ZBX_STARTPOLLERSUNREACHABLE
+              value: "1"
+            - name: ZBX_STARTTRAPPERS
+              value: "5"
+            - name: ZBX_STARTPINGERS
+              value: "1"
+            - name: ZBX_STARTDISCOVERERS
+              value: "1"
+            - name: ZBX_STARTHTTPPOLLERS
+              value: "1"
+            - name: ZBX_STARTTIMERS
+              value: "1"
+            - name: ZBX_STARTESCALATORS
+              value: "1"
+            - name: ZBX_STARTALERTERS
+              value: "3"
+            - name: ZBX_HOUSEKEEPINGFREQUENCY
+              value: "1"
+            - name: ZBX_MAXHOUSEKEEPERDELETE
+              value: "5000"
+            - name: ZBX_SENDERFREQUENCY
+              value: "30"
+            - name: ZBX_TIMEOUT
+              value: "4"
+            - name: ZBX_LOGSLOWQUERIES
+              value: "3000"
+            - name: ZBX_DEBUGLEVEL
+              value: "3"
+
+          # Probes de saúde
+          livenessProbe:
+            tcpSocket:
+              port: 10051
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          readinessProbe:
+            tcpSocket:
+              port: 10051
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Recursos
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+
+          # Volumes
+          volumeMounts:
+            - name: zabbix-server-data
+              mountPath: /var/lib/zabbix
+              subPath: lib
+            - name: zabbix-server-data
+              mountPath: /var/lib/zabbix/snmptraps
+              subPath: snmptraps
+            - name: zabbix-server-data
+              mountPath: /var/lib/zabbix/mibs
+              subPath: mibs
+
+      volumes:
+        - name: zabbix-server-data
+          persistentVolumeClaim:
+            claimName: zabbix-server-pvc
+
+      restartPolicy: Always

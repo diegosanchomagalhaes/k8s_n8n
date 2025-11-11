@@ -1,0 +1,86 @@
+# Zabbix Web Service Deployment
+# Serviço para geração de relatórios e exportação de dados
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zabbix-web-service
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: web-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zabbix
+      component: web-service
+  template:
+    metadata:
+      labels:
+        app: zabbix
+        component: web-service
+    spec:
+      containers:
+        - name: zabbix-web-service
+          image: zabbix/zabbix-web-service:ubuntu-7.4.5
+          ports:
+            - containerPort: 10053
+              name: web-service
+              protocol: TCP
+          env:
+            - name: ZBX_ALLOWEDIP
+              value: "zabbix-web.zabbix.svc.cluster.local"
+            - name: ZBX_DEBUGLEVEL
+              value: "3"
+            - name: ZBX_TIMEOUT
+              value: "10"
+          livenessProbe:
+            tcpSocket:
+              port: 10053
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 10053
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          securityContext:
+            runAsUser: 1997
+            runAsGroup: 1995
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+---
+# Zabbix Web Service Service
+# Service para comunicação com o Web Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: zabbix-web-service
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: web-service
+spec:
+  type: ClusterIP
+  selector:
+    app: zabbix
+    component: web-service
+  ports:
+    - port: 10053
+      targetPort: 10053
+      protocol: TCP
+      name: web-service

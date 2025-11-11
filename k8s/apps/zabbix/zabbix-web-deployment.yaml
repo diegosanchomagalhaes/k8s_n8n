@@ -1,0 +1,146 @@
+# Zabbix Web Frontend Deployment
+# Interface web do Zabbix com Nginx e PostgreSQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zabbix-web
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zabbix
+      component: web
+  template:
+    metadata:
+      labels:
+        app: zabbix
+        component: web
+    spec:
+      securityContext:
+        runAsUser: 1997
+        runAsGroup: 1995
+        fsGroup: 1995
+
+      # Init container para corrigir permissões
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Corrigindo permissões para UID/GID 1997:1995..."
+              chown -R 1997:1995 /usr/share/zabbix
+              chmod -R 755 /usr/share/zabbix
+              echo "Permissões corrigidas!"
+          volumeMounts:
+            - name: zabbix-web-data
+              mountPath: /usr/share/zabbix
+          securityContext:
+            runAsUser: 0
+
+      containers:
+        - name: zabbix-web
+          image: zabbix/zabbix-web-nginx-pgsql:ubuntu-7.4.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+
+          env:
+            # PostgreSQL Configuration
+            - name: DB_SERVER_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: DB_SERVER_HOST
+            - name: DB_SERVER_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: DB_SERVER_PORT
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-db-secret
+                  key: POSTGRES_DB
+
+            # Zabbix Server Connection
+            - name: ZBX_SERVER_HOST
+              value: "zabbix-server.zabbix.svc.cluster.local"
+            - name: ZBX_SERVER_PORT
+              value: "10051"
+
+            # Web Configuration
+            - name: PHP_TZ
+              value: "America/Sao_Paulo"
+            - name: ZBX_SERVER_NAME
+              value: "Zabbix K8s"
+            - name: ZBX_MAXEXECUTIONTIME
+              value: "600"
+            - name: ZBX_MEMORYLIMIT
+              value: "256M"
+            - name: ZBX_POSTMAXSIZE
+              value: "32M"
+            - name: ZBX_UPLOADMAXFILESIZE
+              value: "16M"
+            - name: ZBX_MAXINPUTTIME
+              value: "300"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          volumeMounts:
+            - name: zabbix-web-data
+              mountPath: /usr/share/zabbix/modules
+              subPath: modules
+
+      volumes:
+        - name: zabbix-web-data
+          persistentVolumeClaim:
+            claimName: zabbix-web-pvc
+
+      restartPolicy: Always

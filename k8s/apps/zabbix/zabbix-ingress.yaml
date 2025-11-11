@@ -1,0 +1,28 @@
+# Zabbix Ingress
+# Configuração de ingress com TLS para acesso externo ao Zabbix
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zabbix-ingress
+  namespace: zabbix
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: "selfsigned-cluster-issuer"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - zabbix.local.127.0.0.1.nip.io
+      secretName: zabbix-tls-secret
+  rules:
+    - host: zabbix.local.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: zabbix-web
+                port:
+                  number: 80

@@ -1,0 +1,16 @@
+# Zabbix TLS Certificate
+# Certificado TLS automático via cert-manager para acesso HTTPS
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: zabbix-tls
+  namespace: zabbix
+spec:
+  secretName: zabbix-tls-secret
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer
+  commonName: zabbix.local.127.0.0.1.nip.io
+  dnsNames:
+    - zabbix.local.127.0.0.1.nip.io
+    - zabbix.zabbix.svc.cluster.local

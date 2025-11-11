@@ -1,0 +1,91 @@
+# Zabbix Agent Classic Deployment
+# Deployment escalável do Agent Classic para compatibilidade legada
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zabbix-agent-classic
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: agent-classic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zabbix
+      component: agent-classic
+  template:
+    metadata:
+      labels:
+        app: zabbix
+        component: agent-classic
+    spec:
+      containers:
+        - name: zabbix-agent-classic
+          image: zabbix/zabbix-agent:ubuntu-7.4.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 10061
+              name: agent-classic
+              protocol: TCP
+          env:
+            - name: ZBX_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ZBX_SERVER_HOST
+              value: "zabbix-server.zabbix.svc.cluster.local"
+            - name: ZBX_SERVER_PORT
+              value: "10051"
+            - name: ZBX_LISTENPORT
+              value: "10061"
+            - name: ZBX_PASSIVE_ALLOW
+              value: "true"
+            - name: ZBX_ACTIVE_ALLOW
+              value: "true"
+            - name: ZBX_DEBUGLEVEL
+              value: "3"
+            - name: ZBX_TIMEOUT
+              value: "10"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            tcpSocket:
+              port: 10061
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 10061
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+# Zabbix Agent Classic Service
+# Service para comunicação com os agents classic
+apiVersion: v1
+kind: Service
+metadata:
+  name: zabbix-agent-classic
+  namespace: zabbix
+  labels:
+    app: zabbix
+    component: agent-classic
+spec:
+  type: ClusterIP
+  selector:
+    app: zabbix
+    component: agent-classic
+  ports:
+    - port: 10061
+      targetPort: 10061
+      protocol: TCP
+      name: agent-classic
