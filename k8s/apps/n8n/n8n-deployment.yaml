@@ -72,7 +72,7 @@ spec:
             runAsUser: 0
       containers:
         - name: n8n
-          image: n8nio/n8n:1.118.2
+          image: n8nio/n8n:1.119.1
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
