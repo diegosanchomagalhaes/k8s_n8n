@@ -27,7 +27,7 @@
 ### **⚡ Setup Completo em 1 Comando**
 
 ```bash
-# 🚀 Deploy completo (infraestrutura + 4 aplicações)
+# 🚀 Deploy completo (infraestrutura + 5 aplicações)
 ./start-all.sh
 
 # OU deploy aplicações específicas:
@@ -35,6 +35,7 @@
 ./start-all.sh grafana                # Infra + grafana
 ./start-all.sh prometheus             # Infra + prometheus
 ./start-all.sh glpi                   # Infra + glpi
+./start-all.sh zabbix                 # Infra + zabbix
 ```
 
 ### **⚙️ Configuração de Credenciais (primeira execução)**

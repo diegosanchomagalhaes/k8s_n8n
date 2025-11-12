@@ -11,21 +11,23 @@
 [![Grafana](https://img.shields.io/badge/Grafana-12.2.1-orange)](https://grafana.com/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-v3.7.3-orange)](https://prometheus.io/)
 [![GLPI](https://img.shields.io/badge/GLPI-11.0.1-blue)](https://glpi-project.org/)
+[![Zabbix](https://img.shields.io/badge/Zabbix-7.4.5-red)](https://www.zabbix.com/)
 [![cert-manager](https://img.shields.io/badge/cert--manager-v1.19.0-green)](https://cert-manager.io/)
 
 ## 🎯 **Status Atual - Infraestrutura Completa**
 
 - ✅ **k3d Cluster**: 1 server + 2 agents + LoadBalancer com volume bind real
-- ✅ **PostgreSQL 16**: Persistência hostPath + databases para n8n/grafana/prometheus
-- ✅ **MariaDB 12.0.2**: Banco dedicado GLPI + persistência hostPath
-- ✅ **Redis 8.2.3**: Cache compartilhado com databases separados (DB0-DB3)
-- ✅ **n8n 1.118.2**: HTTPS + TLS automático + PostgreSQL + Redis cache
-- ✅ **Grafana 12.2.1**: Dashboards + PostgreSQL + Redis + auto-scaling
-- ✅ **Prometheus v3.7.3**: Métricas + alertas + PostgreSQL + Redis cache
-- ✅ **GLPI 11.0.1**: Service Desk + MariaDB + Redis cache + HTTPS
+- ✅ **PostgreSQL 16**: Persistência hostPath + databases para n8n/grafana/prometheus/zabbix
+- ✅ **MariaDB 12.0.2**: Banco dedicado GLPI + zabbix_proxy + persistência hostPath
+- ✅ **Redis 8.2.3**: Cache compartilhado com databases separados (DB0-DB4)
+- ✅ **n8n 1.118.2**: HTTPS + TLS automático + PostgreSQL + Redis cache + HPA
+- ✅ **Grafana 12.2.1**: Dashboards + PostgreSQL + Redis + HPA
+- ✅ **Prometheus v3.7.3**: Métricas + alertas + PostgreSQL + Redis + HPA
+- ✅ **GLPI 11.0.1**: Service Desk + MariaDB + Redis + HPA
+- ✅ **Zabbix 7.4.5**: Monitoramento completo (9 componentes) + 7 HPAs + PostgreSQL + MariaDB + Redis
 - ✅ **cert-manager v1.19.0**: Certificados TLS auto-renováveis
 - ✅ **Sistema de Backup**: PostgreSQL + MariaDB + PVCs com persistência real
-- ✅ **Namespaces Organizados**: postgres, mariadb, redis, n8n, grafana, prometheus, glpi, cert-manager
+- ✅ **Namespaces Organizados**: postgres, mariadb, redis, n8n, grafana, prometheus, glpi, zabbix, cert-manager
 - ✅ **Permissões Configuradas**: fsGroup correto para todos os componentes
 - ✅ **TRUE PaaS BEHAVIOR**: Dados sobrevivem à destruição/recriação do cluster
 - ✅ **Scripts de Limpeza**: Destruição completa e segura do ambiente
@@ -38,6 +40,7 @@
 | **Grafana**    | `https://grafana.local.127.0.0.1.nip.io:8443`    | 8443  | HTTPS/TLS |
 | **Prometheus** | `https://prometheus.local.127.0.0.1.nip.io:8443` | 8443  | HTTPS/TLS |
 | **GLPI**       | `https://glpi.local.127.0.0.1.nip.io:8443`       | 8443  | HTTPS/TLS |
+| **Zabbix**     | `https://zabbix.local.127.0.0.1.nip.io:8443`     | 8443  | HTTPS/TLS |
 | **PostgreSQL** | `localhost:30432`                                | 30432 | NodePort  |
 | **MariaDB**    | `localhost:30306`                                | 30306 | NodePort  |
 | **Redis**      | `redis.redis.svc.cluster.local:6379`             | 6379  | ClusterIP |
@@ -77,10 +80,10 @@
 ```
 /home/dsm/cluster/
 ├── postgresql/
-│   ├── data/                     # PostgreSQL databases (n8n + grafana + prometheus)
+│   ├── data/                     # PostgreSQL databases (n8n + grafana + prometheus + zabbix)
 │   └── backup/                   # Backups automáticos
-├── mariadb/                      # MariaDB database (GLPI) - fsGroup: 999
-├── redis/                        # Redis cache (compartilhado) - DB0-DB3
+├── mariadb/                      # MariaDB databases (glpi + zabbix_proxy) - fsGroup: 999
+├── redis/                        # Redis cache (compartilhado) - DB0-DB4
 ├── applications/
 │   ├── n8n/
 │   │   ├── data/                # n8n workflows - fsGroup: 1001
@@ -95,7 +98,12 @@
 │       ├── data/                # GLPI dados principais - fsGroup: 1000
 │       ├── config/              # GLPI configurações
 │       └── files/               # GLPI uploads e anexos
-└── pvc/                         # PVCs dinâmicos
+└── pvc/
+    └── zabbix/                   # Zabbix PVCs persistentes
+        ├── server/              # Zabbix Server data (5Gi) - fsGroup: 1997
+        ├── web/                 # Zabbix Web data (2Gi) - fsGroup: 1997
+        ├── proxy/               # Zabbix Proxy data (1Gi) - fsGroup: 1997
+        └── snmptraps/           # SNMP Traps data (500Mi) - fsGroup: 1997
 ```
 
 > ⚠️ **Permissões Importantes**: Cada aplicação possui fsGroup específico configurado no deployment para garantir acesso correto aos volumes persistentes.
@@ -124,6 +132,7 @@ Este projeto implementa uma **arquitetura dual-database** otimizada para diferen
 - **N8N**: Workflows complexos, JSON fields, extensões
 - **Grafana**: Dashboards, alertas, configurações avançadas
 - **Prometheus**: Time-series data, métricas, alertas
+- **Zabbix Server**: Monitoramento, histórico, trends
 - **Recursos**: JSONB, arrays, extensões, performance otimizada
 
 ### **🗄️ MariaDB 12.0.2** (Aplicações Tradicionais)
@@ -137,6 +146,7 @@ Este projeto implementa uma **arquitetura dual-database** otimizada para diferen
 - **Database 1**: Grafana cache
 - **Database 2**: GLPI cache e sessões
 - **Database 3**: Prometheus cache
+- **Database 4**: Zabbix cache (128M dedicado)
 
 > 💡 **Vantagem**: Cada aplicação usa o banco ideal para suas necessidades, mantendo performance e compatibilidade máximas.
 
@@ -152,6 +162,7 @@ Este projeto implementa uma **arquitetura dual-database** otimizada para diferen
 | **Grafana**    | 472     | `grafana:grafana`           | `/home/dsm/cluster/applications/grafana/`    |
 | **Prometheus** | 65534   | `nobody:nogroup`            | `/home/dsm/cluster/applications/prometheus/` |
 | **GLPI**       | 1000    | `dsm:dsm`                   | `/home/dsm/cluster/applications/glpi/`       |
+| **Zabbix**     | 1997    | `zabbix:zabbix`             | `/home/dsm/cluster/pvc/zabbix/`              |
 | **Redis**      | 999     | `redis:redis`               | `/home/dsm/cluster/redis/`                   |
 
 ### **🛡️ Segurança de Credenciais**
@@ -534,9 +545,10 @@ Esta documentação está organizada de forma modular para facilitar a manutenç
 | **Grafana**      | Monitoramento e dashboards | https://grafana.local.127.0.0.1.nip.io:8443          | admin / admin             | **[README-GRAFANA.md](README-GRAFANA.md)**       |
 | **Prometheus**   | Métricas e alertas         | https://prometheus.local.127.0.0.1.nip.io:8443       | -                         | **[README-PROMETHEUS.md](README-PROMETHEUS.md)** |
 | **GLPI**         | Service Desk e ITSM        | https://glpi.local.127.0.0.1.nip.io:8443             | glpi / glpi               | **[README-GLPI.md](README-GLPI.md)**             |
-| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n/grafana/glpi/prometheus           |
+| **Zabbix**       | Monitoramento completo     | https://zabbix.local.127.0.0.1.nip.io:8443           | Admin / zabbix            | **[README-ZABBIX.md](README-ZABBIX.md)**         |
+| **Redis**        | Cache & Session Store      | Interno (`redis.redis.svc.cluster.local:6379`)       | -                         | Cache para n8n/grafana/glpi/prometheus/zabbix    |
 | **PostgreSQL**   | Banco de dados (Apps)      | Interno (`postgres.postgres.svc.cluster.local:5432`) | postgres / postgres_admin | **[README-INFRA.md](README-INFRA.md)**           |
-| **MariaDB**      | Banco de dados (GLPI)      | Interno (`mariadb.mariadb.svc.cluster.local:3306`)   | mariadb_admin / \*\*\*    | Base de dados para GLPI                          |
+| **MariaDB**      | Banco de dados (GLPI)      | Interno (`mariadb.mariadb.svc.cluster.local:3306`)   | mariadb_admin / \*\*\*    | Base de dados para GLPI e Zabbix Proxy           |
 
 ### **🔄 Adicionando Novas Aplicações**
 
@@ -554,9 +566,10 @@ cp -r k8s/apps/n8n/* k8s/apps/NOVA_APP/
 - **✅ Grafana**: Dashboards e monitoring (implementado)
 - **✅ Prometheus**: Métricas e alertas (implementado)
 - **✅ GLPI**: Service Desk e ITSM (implementado)
+- **✅ Zabbix**: Monitoramento completo 7.4.5 (implementado)
 - **✅ Redis**: Cache e sessões (implementado)
 - **✅ PostgreSQL**: Base de dados para apps (implementado)
-- **✅ MariaDB**: Base de dados para GLPI (implementado)
+- **✅ MariaDB**: Base de dados para GLPI e Zabbix Proxy (implementado)
 
 ## �🔑 **Configuração SSH para GitHub (Opcional)**
 
@@ -799,12 +812,14 @@ kubectl get pods -n redis              # Status do Redis
 ./start-all.sh grafana               # Somente grafana
 ./start-all.sh prometheus            # Somente prometheus
 ./start-all.sh glpi                  # Somente glpi
+./start-all.sh zabbix                # Somente zabbix
 
 # 🛠️ Manutenção (remover aplicação mantendo dados)
 ./k8s/apps/n8n/scripts/2.destroy-n8n.sh         # Remove n8n (dados preservados)
 ./k8s/apps/grafana/scripts/2.destroy-grafana.sh # Remove grafana (dados preservados)
 ./k8s/apps/prometheus/scripts/2.destroy-prometheus.sh # Remove prometheus (dados preservados)
 ./k8s/apps/glpi/scripts/2.destroy-glpi.sh       # Remove glpi (dados preservados)
+./k8s/apps/zabbix/scripts/2.destroy-zabbix.sh   # Remove zabbix (dados preservados)
 
 # 🔄 Reiniciar ambiente (se necessário)
 ./infra/scripts/2.destroy-infra.sh
@@ -1011,21 +1026,21 @@ echo '127.0.0.1 n8n.local.127.0.0.1.nip.io' | sudo tee -a /etc/hosts
 
 ### **🔧 Scripts Específicos**
 
-| **Categoria**                  | **Script**                                          | **Função**                                                         |
-| ------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------ |
-| **🚀 Deploy Completo**         | `start-all.sh`                                      | Infraestrutura + todas aplicações (n8n, grafana, prometheus, glpi) |
-| **🏗️ Infraestrutura**          | `infra/scripts/10.start-infra.sh`                   | Cluster + PostgreSQL + MariaDB + Redis + cert-manager              |
-| **🎯 Aplicação n8n**           | `k8s/apps/n8n/scripts/3.start-n8n.sh`               | Deploy n8n com HTTPS                                               |
-| **📊 Aplicação Grafana**       | `k8s/apps/grafana/scripts/3.start-grafana.sh`       | Deploy Grafana com HTTPS                                           |
-| **� Aplicação Prometheus**     | `k8s/apps/prometheus/scripts/3.start-prometheus.sh` | Deploy Prometheus com HTTPS                                        |
-| **🎫 Aplicação GLPI**          | `k8s/apps/glpi/scripts/3.start-glpi.sh`             | Deploy GLPI com HTTPS                                              |
-| **�🗑️ Limpeza Infra**          | `infra/scripts/2.destroy-infra.sh`                  | Remove cluster (mantém dados hostPath)                             |
-| **🧪 Teste Persistência**      | `infra/scripts/19.test-persistence.sh`              | Testa que dados sobrevivem destroy cluster                         |
-| **💥 Destruição Completa**     | `infra/scripts/18.destroy-all.sh`                   | Remove cluster + databases + filesystem (limpeza total)            |
-| **🧹 Limpeza Databases**       | `infra/scripts/14.clean-cluster-data.sh`            | Drop databases PostgreSQL e MariaDB (requer cluster ativo)         |
-| **📂 Limpeza Filesystem**      | `infra/scripts/15.clean-cluster-pvc.sh`             | Remove dados hostPath (requer cluster parado)                      |
-| **🗑️ Limpeza Aplicações**      | `k8s/apps/*/scripts/2.destroy-*.sh`                 | Remove app (mantém dados)                                          |
-| **💥 Drop Database Aplicação** | `k8s/apps/*/scripts/4.drop-database-*.sh`           | Remove PERMANENTEMENTE dados da aplicação                          |
+| **Categoria**                  | **Script**                                          | **Função**                                                                 |
+| ------------------------------ | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| **🚀 Deploy Completo**         | `start-all.sh`                                      | Infraestrutura + todas aplicações (n8n, grafana, prometheus, glpi, zabbix) |
+| **🏗️ Infraestrutura**          | `infra/scripts/10.start-infra.sh`                   | Cluster + PostgreSQL + MariaDB + Redis + cert-manager                      |
+| **🎯 Aplicação n8n**           | `k8s/apps/n8n/scripts/3.start-n8n.sh`               | Deploy n8n com HTTPS                                                       |
+| **📊 Aplicação Grafana**       | `k8s/apps/grafana/scripts/3.start-grafana.sh`       | Deploy Grafana com HTTPS                                                   |
+| **� Aplicação Prometheus**     | `k8s/apps/prometheus/scripts/3.start-prometheus.sh` | Deploy Prometheus com HTTPS                                                |
+| **🎫 Aplicação GLPI**          | `k8s/apps/glpi/scripts/3.start-glpi.sh`             | Deploy GLPI com HTTPS                                                      |
+| **�🗑️ Limpeza Infra**          | `infra/scripts/2.destroy-infra.sh`                  | Remove cluster (mantém dados hostPath)                                     |
+| **🧪 Teste Persistência**      | `infra/scripts/19.test-persistence.sh`              | Testa que dados sobrevivem destroy cluster                                 |
+| **💥 Destruição Completa**     | `infra/scripts/18.destroy-all.sh`                   | Remove cluster + databases + filesystem (limpeza total)                    |
+| **🧹 Limpeza Databases**       | `infra/scripts/14.clean-cluster-data.sh`            | Drop databases PostgreSQL e MariaDB (requer cluster ativo)                 |
+| **📂 Limpeza Filesystem**      | `infra/scripts/15.clean-cluster-pvc.sh`             | Remove dados hostPath (requer cluster parado)                              |
+| **🗑️ Limpeza Aplicações**      | `k8s/apps/*/scripts/2.destroy-*.sh`                 | Remove app (mantém dados)                                                  |
+| **💥 Drop Database Aplicação** | `k8s/apps/*/scripts/4.drop-database-*.sh`           | Remove PERMANENTEMENTE dados da aplicação                                  |
 
 > 📚 **Lista completa de scripts**: Consulte **[SCRIPT-ANALYSIS-REPORT.md](SCRIPT-ANALYSIS-REPORT.md)** para todos os 19 scripts disponíveis com descrições detalhadas e fluxos de trabalho.
 
@@ -1322,7 +1337,7 @@ kubectl scale deployment/glpi --replicas=2 -n glpi
 8. Criar script de destroy: `k8s/apps/nova-app/scripts/2.destroy-nova-app.sh`
 9. Adicionar ao `start-all.sh` e atualizar documentação
 
-> 💡 **Dica**: Use as aplicações existentes (n8n, grafana, prometheus, glpi) como template para criar novas aplicações.
+> 💡 **Dica**: Use as aplicações existentes (n8n, grafana, prometheus, glpi, zabbix) como template para criar novas aplicações.
 
 ### Backup e Restore
 
@@ -1470,5 +1485,5 @@ git push origin main
 
 ---
 
-**K3D Local Development** - Ambiente Kubernetes com 4 Aplicações (n8n, Grafana, Prometheus, GLPI)  
+**K3D Local Development** - Ambiente Kubernetes com 5 Aplicações (n8n, Grafana, Prometheus, GLPI, Zabbix)  
 _Última atualização: dezembro 2024_
