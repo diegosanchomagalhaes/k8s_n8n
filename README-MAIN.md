@@ -98,6 +98,24 @@ nano k8s/apps/zabbix/zabbix-secret-db.yaml         # Zabbix (PG + Redis DB4)
 | **MariaDB 12.0.2** | `localhost:30306`                    | `root` / `mariadb_root`           | glpi                                                       |
 | **Redis 8.2.3**    | `redis.redis.svc.cluster.local:6379` | `Redis_Shared_Cache_K8s_2024_...` | DB0=n8n, DB1=grafana, DB2=glpi, DB3=prometheus, DB4=zabbix |
 
+---
+
+## 🛡️ Conformidade com Padrões Kubernetes
+
+Este projeto utiliza **Traefik** como Ingress Controller, em conformidade com as recomendações da comunidade Kubernetes.
+
+**✅ Status de Conformidade:**
+
+- ✅ **Ingress NGINX Retirement**: Este projeto **NÃO é afetado** pela aposentadoria do Ingress NGINX (março/2026)
+- ✅ **Ingress Controller**: Traefik (nativo do k3d) - mantido ativamente pela Traefik Labs
+- ✅ **IngressClass**: Todos os 5 Ingress resources utilizam `ingressClassName: traefik`
+- ✅ **TLS/Certificados**: Integração com cert-manager + Let's Encrypt (certificados válidos)
+- ✅ **Segurança**: Sem dependências de controllers descontinuados
+
+**📋 Análise Completa**: Consulte `INGRESS-NGINX-RETIREMENT-ANALYSIS.md` para detalhes da auditoria de conformidade.
+
+---
+
 > ⚠️ **IMPORTANTE**:
 >
 > - Use sempre **porta 8443** para HTTPS (k3d mapeia 443→8443)
